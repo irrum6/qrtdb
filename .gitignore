@@ -1,0 +1,5 @@
+/target
+/src/*_old.rs
+
+notes.md
+etc.md
