@@ -121,9 +121,6 @@ pub mod db {
             let st_type = StatementType::SELECT;
             return Statement { st_type };
         }
-        // pub fn get_type(&self) -> StatementType {
-        //     return self.st_type;
-        // }
         pub fn prepare(&mut self, line: &String) -> PrepareResult {
             if line.contains("insert") {
                 self.st_type = StatementType::INSERT;
@@ -133,14 +130,6 @@ pub mod db {
                 return PrepareResult::SUCCESS;
             }
             return PrepareResult::UnrecognizedStatement;
-        }
-
-        fn execute(&mut self) {
-            let strong = match self.st_type {
-                StatementType::INSERT => "We want to INSERT something in uranus",
-                StatementType::SELECT => "We want to SELECT from ur mom",
-            };
-            println!("{}", strong);
         }
     }
 
