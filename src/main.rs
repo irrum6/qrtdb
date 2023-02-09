@@ -1,8 +1,17 @@
-mod db;
+use qrtdb::qrtlib::help;
+use qrtdb::{Database, MetaCommands};
 
-use db::db::{Database, MetaCommands};
+mod file_test_old;
+mod db4;
+
+
+use db4::db4::rundb4;
 
 fn main() {
+    file_test_old::run_file_test();
+
+    rundb4();
+    return;
     use std::io::stdin;
     let mut line = String::new();
 
@@ -14,15 +23,15 @@ fn main() {
         // process line
         if line.contains(".") {
             let mc = MetaCommands::from(&line);
-                match mc {
-                    MetaCommands::EXIT => return,
-                    MetaCommands::HELP => db.help(),
-                    MetaCommands::TABLES => db.lstables(),
-                    MetaCommands::UnrecognizedCommand => {
-                        println!("Unrecognized meta command")
-                    }
+            match mc {
+                MetaCommands::EXIT => return,
+                MetaCommands::HELP => db.help(),
+                MetaCommands::TABLES => db.lstables(),
+                MetaCommands::UnrecognizedCommand => {
+                    println!("Unrecognized meta command")
                 }
-                line.truncate(0);
+            }
+            line.truncate(0);
             continue;
         }
         db.process_statement(&line);

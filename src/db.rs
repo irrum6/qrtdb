@@ -131,11 +131,7 @@ pub mod db {
             }
             return PrepareResult::UnrecognizedStatement;
         }
-    }
-
-    fn print_help() {
-        print!("help");
-    }
+    }   
 
     pub struct Database {
         // https://dev.to/magnusstrale/rust-trait-objects-in-a-vector-non-trivial-4co5
@@ -173,7 +169,14 @@ pub mod db {
             }
         }
         pub fn help(&self) {
-            print_help();
+            print!("help");
+        }
+        fn print_help() {
+            print!("help");
+        }
+
+        pub fn save_to_disk(&self){
+            
         }
         
         pub fn process_statement(&mut self, line: &String) {
