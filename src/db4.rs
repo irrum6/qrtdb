@@ -1,4 +1,22 @@
+use crate::field_types::field_types::FieldTypes;
 pub mod db4 {
+    use crate::field_types::field_types::FieldTypes;
+
+    pub struct TableField {
+        name: String,
+        tf_type: FieldTypes,
+    }
+
+    impl TableField {
+        pub fn new(name: &str, ftype: &str) -> TableField {
+            let tf_type = FieldTypes::from(ftype);
+            return TableField {
+                name: String::from(name),
+                tf_type,
+            };
+        }
+    }
+
     struct Database {
         name: String,
     }
@@ -12,6 +30,7 @@ pub mod db4 {
         fn dbname(&self) -> String {
             return self.name.clone();
         }
+        fn execute() {}
     }
 
     struct Namespace {
@@ -28,7 +47,7 @@ pub mod db4 {
         fn name(&self) -> String {
             return self.name.clone();
         }
-        
+
         fn dbname(&self) -> String {
             return self.dbname.clone();
         }
@@ -54,54 +73,6 @@ pub mod db4 {
         pub fn deserialize() {}
     }
 
-    struct Nchar {
-        length: u64,
-        value: String,
-    }
-    impl Nchar {
-        fn new(length: u64, value: String) -> Nchar {
-            return Nchar { length, value };
-        }
-    }
-    struct Varchar {
-        length: u64,
-        value: String,
-    }
-
-    struct DBInteger {
-        value: u64,
-    }
-    impl Varchar {
-        fn new(length: u64, v: &str) -> Varchar {
-            let value = String::from(v);
-            if value.len() > length as usize {}
-            return Varchar { length, value };
-        }
-    }
-
-    enum FieldTypes {
-        Number(f64),
-        Integer(u64),
-        Varchar(Varchar),
-        Nchar(Nchar),
-        Date(u64),
-    }
-
-    impl FieldTypes {}
-    struct TableField {
-        name: String,
-        field_type: FieldTypes,
-    }
-
-    impl TableField {
-        pub fn new(name: &str, field_type: FieldTypes) -> TableField {
-            return TableField {
-                name: String::from(name),
-                field_type,
-            };
-        }
-    }
-
     struct Record {
         table: String,
         fields: Vec<TableField>,
@@ -110,8 +81,7 @@ pub mod db4 {
     impl Record {
         pub fn dummy() -> Record {
             let tname = String::from("Pencils");
-            let field1 =
-                TableField::new("brand", FieldTypes::Varchar(Varchar::new(20, "KohiNoor")));
+            let field1 = TableField::new("brand", "vchar");
             let mut fields: Vec<TableField> = Vec::new();
             fields.push(field1);
             return Record {
@@ -131,7 +101,58 @@ pub mod db4 {
             };
         }
     }
+    // meta commands
 
+    pub enum MetaCommands {
+        EXIT,
+        TABLES,
+        HELP,
+        UnrecognizedCommand,
+    }
+    impl MetaCommands {
+        pub fn from(s: &str) -> MetaCommands {
+            let st = s.trim();
+            return match st {
+                ".exit" | ".EXIT" => MetaCommands::EXIT,
+                ".help" | ".HELP" => MetaCommands::HELP,
+                ".tables" | ".TABLES" | ".T" => MetaCommands::TABLES,
+                _ => MetaCommands::UnrecognizedCommand,
+            };
+        }
+    }
+
+    pub enum PrepareResult {
+        SUCCESS,
+        UnrecognizedStatement,
+    }
+
+    #[derive(Clone, Copy)]
+    pub enum StatementType {
+        INSERT,
+        SELECT,
+    }
+
+    pub struct Statement {
+        st_type: StatementType,
+    }
+
+    impl Statement {
+        pub fn new() -> Statement {
+            let st_type = StatementType::SELECT;
+            return Statement { st_type };
+        }
+        pub fn prepare(&mut self, line: &String) -> PrepareResult {
+            if line.contains("insert") {
+                self.st_type = StatementType::INSERT;
+                return PrepareResult::SUCCESS;
+            } else if line.contains("select") {
+                self.st_type = StatementType::SELECT;
+                return PrepareResult::SUCCESS;
+            }
+            return PrepareResult::UnrecognizedStatement;
+        }
+    }
+    // main here
     pub fn rundb4() {
         let mut dblist: Vec<Database> = Vec::new();
 
@@ -150,8 +171,8 @@ pub mod db4 {
 
         // let TableField { name, field_type }
 
-        let tf = TableField::new("name", FieldTypes::Varchar(Varchar::new(20, "")));
-        let tf2 = TableField::new("age", FieldTypes::Integer(16));
+        let tf = TableField::new("name", "vchar");
+        let tf2 = TableField::new("age", "int");
         let mut fields: Vec<TableField> = Vec::new();
 
         fields.push(tf);
@@ -167,7 +188,16 @@ pub mod db4 {
 
         fn alter_table() {}
 
-        fn drop_table() {}
+        fn drop_table(name: String) {
+            let index = 0;
+            // for table in &tablelist{
+            //cant capture
+            // }
+        }
+
+        fn table_info() {}
+
+        fn ls_tables() {}
 
         fn insert_into_table() {}
 

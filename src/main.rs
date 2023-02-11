@@ -3,7 +3,7 @@ use qrtdb::{Database, MetaCommands};
 
 mod file_test_old;
 mod db4;
-
+mod field_types;
 
 use db4::db4::rundb4;
 
