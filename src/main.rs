@@ -1,11 +1,11 @@
-use qrtdb::qrtlib::help;
+// use qrtdb::qrtlib::help;
 // use qrtdb::{Database, MetaCommands};
 
 use qrtdb::qrtlib::rundb4;
 mod file_test_old;
 
 fn main() {
-    file_test_old::run_file_test();
+    // file_test_old::run_file_test();
 
     rundb4();
     return;

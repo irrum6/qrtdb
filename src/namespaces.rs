@@ -3,7 +3,7 @@ pub mod namespaces {
         name: String,
     }
     impl Namespace {
-        pub fn new(name: &str, dbname: String) -> Namespace {
+        pub fn new(name: &str) -> Namespace {
             return Namespace {
                 name: String::from(name),
                 // dbname,

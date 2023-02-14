@@ -1,5 +1,5 @@
 pub mod statements {
-
+    use crate::qrtlib::{FieldTypes, TableField};
     pub enum DDLStatementTypes {
         CREATE_DATABASE,
         CREATE_NAMESPACE,
@@ -15,7 +15,7 @@ pub mod statements {
         DROP_TABLE,
     }
 
-    impl DDLStatements {}
+    impl DDLStatementTypes {}
 
     pub enum DMLStatementTypes {
         INSERT,
@@ -23,12 +23,12 @@ pub mod statements {
         UPDATE,
         DELETE,
     }
-    impl DMLStatements {}
+    impl DMLStatementTypes {}
 
     #[derive(Clone, Copy)]
     pub enum StatementCategory {
-        DDLStatementTypes,
-        DMLStatementTypes,
+        DDLStatement(DDLStatementTypes),
+        DMLStatement(DMLStatementTypes),
     }
 
     pub enum PrepareResult {
@@ -36,8 +36,8 @@ pub mod statements {
         UnrecognizedStatement,
     }
 
-    pub struct Statement{
-        st_type:StatementCategory
+    pub struct Statement {
+        st_type: StatementCategory,
     }
 
     impl Statement {
@@ -47,7 +47,7 @@ pub mod statements {
         }
         pub fn prepare(&mut self, line: &String) -> PrepareResult {
             if line.contains("insert") {
-                self.st_type = StatementType::INSERT;
+                self.st_type = StatementCategory::DMLStatement(DMLStatementTypes::INSERT);
                 return PrepareResult::SUCCESS;
             } else if line.contains("select") {
                 self.st_type = StatementType::SELECT;
