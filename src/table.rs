@@ -15,7 +15,7 @@ pub mod table {
                 tf_type,
             };
         }
-        pub fn name(&self)->String{
+        pub fn name(&self) -> String {
             return self.name.clone();
         }
     }
@@ -37,15 +37,15 @@ pub mod table {
             };
         }
         pub fn get(&self, name: String) -> Option<TableField> {
-            for field in &self.fields.clone(){
-                if field.name == name{
-                    return  Some(field.clone());
-                }                
+            for field in &self.fields.clone() {
+                if field.name == name {
+                    return Some(field.clone());
+                }
             }
-            return  None;
+            return None;
         }
         pub fn set(&self, name: String, t: TableField) {
-
+            
         }
         pub fn serialize_record(record: Record) -> Vec<u8> {
             let data: Vec<u8> = Vec::new();
@@ -79,9 +79,9 @@ pub mod table {
         pub fn tname(&self) -> String {
             return self.name.clone();
         }
-        pub fn insert() {}
-        pub fn select() {}
-        pub fn update() {}
+        pub fn insert(&mut self) {}
+        pub fn select(&mut self) {}
+        pub fn update(&mut self) {}
         pub fn delete(&mut self, index: usize) {
             self.records.swap_remove(index);
         }

@@ -1,4 +1,4 @@
-pub mod command_parser{
+pub mod command_parser {
     pub enum MetaCommands {
         EXIT,
         TABLES,
@@ -9,9 +9,9 @@ pub mod command_parser{
         pub fn from(s: &str) -> MetaCommands {
             let st = s.trim();
             return match st {
-                ".exit" | ".EXIT" | ".X" => MetaCommands::EXIT,
-                ".help" | ".HELP" | ".H" => MetaCommands::HELP,
-                ".tables" | ".TABLES" | ".T" => MetaCommands::TABLES,
+                ".exit" | ".EXIT" | ".X" | ".x" => MetaCommands::EXIT,
+                ".help" | ".HELP" | ".H" | ".h" => MetaCommands::HELP,
+                ".tables" | ".TABLES" | ".T" | ".t" => MetaCommands::TABLES,
                 //ls databases
                 //in base
                 //ls namespacs

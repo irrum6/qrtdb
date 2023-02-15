@@ -2,36 +2,28 @@
 pub mod db4 {
     use std::collections::HashMap;
 
-    use crate::qrtlib::{Database, MetaCommands, Namespace, Table, TableField};
+    use crate::{
+        qrtlib::{Database, MetaCommands, Table, TableField},
+        statements::statements::Statement,
+    };
 
     // meta commands
 
     struct Database4 {
-        databases: Vec<Database>,
-        namespaces: Vec<Namespace>,
-        tables: Vec<Table>,
+        databases: Vec<Database>,        
         database_indexes: HashMap<String, usize>,
-        namespace_indexes: HashMap<String, usize>,
-        table_indexes: HashMap<String, usize>,
     }
 
     impl Database4 {
         pub fn new() -> Database4 {
             let databases: Vec<Database> = Vec::new();
-            let namespaces: Vec<Namespace> = Vec::new();
             let tables: Vec<Table> = Vec::new();
 
             let database_indexes: HashMap<String, usize> = HashMap::new();
-            let namespace_indexes: HashMap<String, usize> = HashMap::new();
-            let table_indexes: HashMap<String, usize> = HashMap::new();
 
             return Database4 {
                 databases,
-                namespaces,
-                tables,
                 database_indexes,
-                namespace_indexes,
-                table_indexes,
             };
         }
 
@@ -39,10 +31,7 @@ pub mod db4 {
             let database = Database::new(name);
             self.databases.push(database);
         }
-        fn create_namespace(&mut self, name: &str) {
-            let database = Namespace::new(name);
-            self.namespaces.push(database);
-        }
+        
         fn create_table() {}
 
         fn alter_table() {}
@@ -69,10 +58,11 @@ pub mod db4 {
 
         fn execute() {}
 
-        pub fn process_statement(&self, line:  &String) {
-            let statements:Vec<&str> = line.split(";").collect();
-            for stmt in statements{
-                
+        pub fn process_statement(&self, line: &String) {
+            let statements: Vec<&str> = line.split(";").collect();
+            for stmt in statements {
+                let mut st = Statement::new(stmt);
+                st.prepare();
             }
         }
         pub fn help() {}
@@ -82,7 +72,13 @@ pub mod db4 {
     // main here
     pub fn rundb4() {
         use std::io::stdin;
-        let db4 = Database4::new();
+        let mut db4 = Database4::new();
+
+        db4.create_database("sys");
+
+        db4.databases[0].add_namespace("sys");
+        //create sys table
+
 
         let mut line = String::new();
 

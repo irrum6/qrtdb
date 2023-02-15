@@ -66,12 +66,22 @@ pub mod field_types {
         }
     }
     #[derive(Clone)]
+    pub struct NullField {
+        value: u64,
+    }
+    impl NullField {
+        fn new() -> NullField {
+            return NullField { value: 0 };
+        }
+    }
+    #[derive(Clone)]
     pub enum FieldTypes {
         Number(Number),
         Integer(Integer),
         Varchar(Varchar),
         Fxchar(Fixedchar),
         Date(Date),
+        Null(NullField),
     }
 
     impl FieldTypes {
@@ -82,6 +92,7 @@ pub mod field_types {
                 "varchar" | "vchar" => FieldTypes::Varchar(Varchar::new(24, "")),
                 "fxchar" | "fchar" => FieldTypes::Fxchar(Fixedchar::new(24, "")),
                 "date" => FieldTypes::Date(Date::new(0)),
+                "null" => FieldTypes::Null(NullField::new()),
                 _ => FieldTypes::Integer(Integer::new(0)),
             };
         }
