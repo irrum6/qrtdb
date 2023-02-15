@@ -9,8 +9,8 @@ pub mod command_parser{
         pub fn from(s: &str) -> MetaCommands {
             let st = s.trim();
             return match st {
-                ".exit" | ".EXIT" | "exit" => MetaCommands::EXIT,
-                ".help" | ".HELP" | "help" => MetaCommands::HELP,
+                ".exit" | ".EXIT" | ".X" => MetaCommands::EXIT,
+                ".help" | ".HELP" | ".H" => MetaCommands::HELP,
                 ".tables" | ".TABLES" | ".T" => MetaCommands::TABLES,
                 //ls databases
                 //in base

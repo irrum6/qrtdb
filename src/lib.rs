@@ -9,6 +9,7 @@ mod namespaces;
 mod database;
 
 mod command_parser;
+mod statements;
 
 pub mod qrtlib {
     pub use super::db4::db4::rundb4;

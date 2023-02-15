@@ -69,7 +69,12 @@ pub mod db4 {
 
         fn execute() {}
 
-        pub fn process_statement(&self, line:  &String) {}
+        pub fn process_statement(&self, line:  &String) {
+            let statements:Vec<&str> = line.split(";").collect();
+            for stmt in statements{
+                
+            }
+        }
         pub fn help() {}
         pub fn lstables(&self) {}
     }
