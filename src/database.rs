@@ -1,13 +1,16 @@
 pub mod database {
     use std::collections::HashMap;
     // use std::ops::Index;
-    use crate::qrtlib::{QueryResult, Table, TableField};
+    use crate::{
+        qrtlib::{QueryResult, Table, TableField},
+        statements::statements::Statement,
+    };
 
     pub struct Database {
         name: String,
         namespaces: Vec<String>,
         tables: Vec<Table>,
-        table_indexes: HashMap<String, usize>,
+        table_indexes: HashMap<String, u64>,
         tindex: u64,
         nsIndex: u64,
     }
@@ -16,7 +19,7 @@ pub mod database {
         pub fn new(_name: &str) -> Database {
             let namespaces: Vec<String> = Vec::new();
             let tables: Vec<Table> = Vec::new();
-            let table_indexes: HashMap<String, usize> = HashMap::new();
+            let table_indexes: HashMap<String, u64> = HashMap::new();
             let name = String::from(_name);
             return Database {
                 name,
@@ -40,24 +43,26 @@ pub mod database {
         pub fn remove_namespace(&mut self, name: &str) {
             let namespace = String::from(name);
         }
-        fn create_table(
-            &mut self,
-            name: &str,
-            fields: Vec<TableField>,
-            namespace: &str,
-        ) -> QueryResult {
+        pub fn compose_table_name(namespace: &str, name: &str) -> String {
+            let mut tname = String::from(namespace);
+            tname.push_str("_");
+            tname.push_str(name);
+            return tname;
+        }
+        pub fn create_table(&mut self, name: &str, fields: Vec<TableField>, namespace: &str) -> QueryResult {
             if !self.namespaces.contains(&String::from(namespace)) {
                 println!("namespace not found");
                 return QueryResult::FAILURE;
             }
-            let table = Table::new(name, fields, namespace);
+
+            let full_table_name = Database::compose_table_name(namespace, name);
+            let table = Table::new(full_table_name.as_str(), fields, namespace);
             self.tables.push(table);
             self.tindex += 1;
-            self.table_indexes
-                .insert(String::from(name), self.tindex as usize);
+            self.table_indexes.insert(String::from(name), self.tindex);
             return QueryResult::SUCCESS;
         }
-        fn remove_table(&mut self, name: &str) {
+        pub fn remove_table(&mut self, name: &str) {
             //get index
             //swap remove by index
             //since swap remove changes indexes
@@ -70,5 +75,21 @@ pub mod database {
             self.tables.swap_remove(*index as usize);
             self.table_indexes.insert(tname, *index);
         }
+
+
+        pub fn ls_tables(&self) {
+
+        }
+        fn get_table_index(&self, tablename: String) -> u64 {
+            let index = self.table_indexes.get(&tablename).unwrap();
+            return *index;
+        }
+        pub fn insert(&mut self, tablename: String, s: Statement) -> QueryResult {
+            let table_index = self.get_table_index(tablename);
+            return self.tables[table_index as usize].insert(String::new());
+        }
+        pub fn select(&mut self) {}
+        pub fn update(&mut self) {}
+        pub fn delete(&mut self, index: usize) {}
     }
 }

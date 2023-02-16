@@ -1,5 +1,5 @@
 pub mod table {
-    use crate::qrtlib::FieldTypes;
+    use crate::qrtlib::{FieldTypes, Fixedchar, QueryResult, Varchar};
 
     #[derive(Clone)]
     pub struct TableField {
@@ -10,13 +10,62 @@ pub mod table {
     impl TableField {
         pub fn new(name: &str, ftype: &str) -> TableField {
             let tf_type = FieldTypes::from(ftype);
+
             return TableField {
                 name: String::from(name),
                 tf_type,
             };
         }
+
         pub fn name(&self) -> String {
             return self.name.clone();
+        }
+
+        pub fn serialize(t: TableField) -> Vec<u8> {
+            return match t.tf_type {
+                FieldTypes::Number(num) => num.to_be_bytes().to_vec(),
+                FieldTypes::Integer(int) => int.to_be_bytes().to_vec(),
+                FieldTypes::Varchar(var) => var.get().into_bytes(),
+                FieldTypes::Fxchar(var) => var.get().into_bytes(),
+                FieldTypes::Date(int) => int.to_be_bytes().to_vec(),
+                FieldTypes::SignedInteger(int) => int.to_be_bytes().to_vec(),
+            };
+        }
+        pub fn deserialize(f: FieldTypes, name: String, v: Vec<u8>) -> TableField {
+            let tf_type: FieldTypes = match f {
+                FieldTypes::Number(_) => {
+                    let mut x: [u8; 8] = [0; 8];
+                    for i in 0..8 {
+                        x[i] = v[i];
+                    }
+                    FieldTypes::Number(f64::from_be_bytes(x))
+                }
+                FieldTypes::Integer(_) => {
+                    let mut x: [u8; 8] = [0; 8];
+                    for i in 0..8 {
+                        x[i] = v[i];
+                    }
+                    FieldTypes::Integer(u64::from_be_bytes(x))
+                }
+                FieldTypes::SignedInteger(_) => {
+                    let mut x: [u8; 8] = [0; 8];
+                    for i in 0..8 {
+                        x[i] = v[i];
+                    }
+                    FieldTypes::SignedInteger(i64::from_be_bytes(x))
+                }
+                FieldTypes::Varchar(vchar) => FieldTypes::Varchar(Varchar::new(vchar.len(), String::from_utf8(v).unwrap())),
+                FieldTypes::Fxchar(vchar) => FieldTypes::Fxchar(Fixedchar::new(vchar.len(), String::from_utf8(v).unwrap())),
+                FieldTypes::Date(_) => {
+                    let mut x: [u8; 8] = [0; 8];
+                    for i in 0..8 {
+                        x[i] = v[i];
+                    }
+                    FieldTypes::Date(u64::from_be_bytes(x))
+                }
+            };
+            return TableField { name, tf_type };
+            // return TableField::new("age", "integer");
         }
     }
 
@@ -26,15 +75,15 @@ pub mod table {
     }
 
     impl Record {
-        pub fn dummy() -> Record {
+        fn dummy() -> Record {
             let tname = String::from("Pencils");
             let field1 = TableField::new("brand", "vchar");
             let mut fields: Vec<TableField> = Vec::new();
             fields.push(field1);
-            return Record {
-                table: tname,
-                fields,
-            };
+            return Record { table: tname, fields };
+        }
+        pub fn new(fields: Vec<TableField>, values: Vec<String>) -> Record {
+            return Record::dummy();
         }
         pub fn get(&self, name: String) -> Option<TableField> {
             for field in &self.fields.clone() {
@@ -44,9 +93,7 @@ pub mod table {
             }
             return None;
         }
-        pub fn set(&self, name: String, t: TableField) {
-
-        }
+        pub fn set(&self, name: String, t: TableField) {}
         pub fn serialize_record(record: Record) -> Vec<u8> {
             let data: Vec<u8> = Vec::new();
             return data;
@@ -79,11 +126,32 @@ pub mod table {
         pub fn tname(&self) -> String {
             return self.name.clone();
         }
-        pub fn get_fields(&self)-> Vec<TableField>{
+        pub fn get_fields(&self) -> Vec<TableField> {
             return self.fields.clone();
         }
-        pub fn insert(&mut self) {}
-        pub fn select(&mut self) {}
+        pub fn insert(&mut self, data: String) -> QueryResult {
+            let binding = data.replace("#", "");
+            let values: Vec<&str> = binding.split(",").collect();
+            let fields = self.get_fields();
+            if values.len() != fields.len() {
+                return QueryResult::FAILURE;
+            }
+            for f in fields {
+                match f.tf_type {
+                    FieldTypes::Number(f) => {
+                        // f.from_string();
+                    }
+                    _ => {}
+                }
+            }
+            //get fields
+            //create record
+            //push int records
+            return QueryResult::SUCCESS;
+        }
+        pub fn select(&mut self, data: String) -> QueryResult {
+            return QueryResult::FAILURE;
+        }
         pub fn update(&mut self) {}
         pub fn delete(&mut self, index: usize) {
             self.records.swap_remove(index);

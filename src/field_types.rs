@@ -1,46 +1,20 @@
 pub mod field_types {
     #[derive(Clone)]
-    pub struct Number {
-        value: f64,
-    }
-
-    impl Number {
-        fn new(v: f64) -> Number {
-            return Number { value: v };
-        }
-        pub fn get(&self) -> f64 {
-            return self.value;
-        }
-        pub fn set(&mut self, v: f64) {
-            self.value = v;
-        }
-    }
-    #[derive(Clone)]
-    pub struct Integer {
-        value: u64,
-    }
-    impl Integer {
-        fn new(v: u64) -> Integer {
-            return Integer { value: v };
-        }
-        pub fn get(&self) -> u64 {
-            return self.value;
-        }
-        pub fn set(&mut self, v: u64) {
-            self.value = v;
-        }
-    }
-    #[derive(Clone)]
     pub struct Varchar {
         length: u64,
         value: String,
     }
 
     impl Varchar {
-        fn new(length: u64, v: &str) -> Varchar {
-            let value = String::from(v);
-            if value.len() > length as usize {}
-            return Varchar { length, value };
+        pub fn new(length: u64, v: String) -> Varchar {
+            if v.len() > length as usize {}
+            return Varchar { length, value: v };
+        }
+        pub fn get(&self) -> String {
+            return self.value.clone();
+        }
+        pub fn len(&self)->u64{
+            return self.length;
         }
     }
     #[derive(Clone)]
@@ -49,51 +23,38 @@ pub mod field_types {
         value: String,
     }
     impl Fixedchar {
-        fn new(length: u64, v: &str) -> Fixedchar {
-            let value = String::from(v);
-            if value.len() > length as usize {}
-            return Fixedchar { length, value };
+        pub fn new(length: u64, v: String) -> Fixedchar {
+            if v.len() > length as usize {}
+            return Fixedchar { length, value: v };
         }
-    }
-    #[derive(Clone)]
-    pub struct Date {
-        value: u64,
+        pub fn get(&self) -> String {
+            return self.value.clone();
+        }
+        pub fn len(&self)->u64{
+            return self.length;
+        }
     }
 
-    impl Date {
-        fn new(v: u64) -> Date {
-            return Date { value: v };
-        }
-    }
-    #[derive(Clone)]
-    pub struct NullField {
-        value: u64,
-    }
-    impl NullField {
-        fn new() -> NullField {
-            return NullField { value: 0 };
-        }
-    }
     #[derive(Clone)]
     pub enum FieldTypes {
-        Number(Number),
-        Integer(Integer),
+        Number(f64),
+        Integer(u64),
+        SignedInteger(i64),
         Varchar(Varchar),
         Fxchar(Fixedchar),
-        Date(Date),
-        Null(NullField),
+        Date(u64),
     }
 
     impl FieldTypes {
         pub fn from(fieldname: &str) -> FieldTypes {
             return match fieldname {
-                "number" | "num" => FieldTypes::Number(Number::new(0.0)),
-                "integer" | "int" => FieldTypes::Integer(Integer::new(0)),
-                "varchar" | "vchar" => FieldTypes::Varchar(Varchar::new(24, "")),
-                "fxchar" | "fchar" => FieldTypes::Fxchar(Fixedchar::new(24, "")),
-                "date" => FieldTypes::Date(Date::new(0)),
-                "null" => FieldTypes::Null(NullField::new()),
-                _ => FieldTypes::Integer(Integer::new(0)),
+                "number" | "num" => FieldTypes::Number(0.0),
+                "integer" | "int" => FieldTypes::Integer(0),
+                "sigint" | "sig" => FieldTypes::Integer(0),
+                "varchar" | "vchar" => FieldTypes::Varchar(Varchar::new(24, String::new())),
+                "fxchar" | "fchar" => FieldTypes::Fxchar(Fixedchar::new(24, String::new())),
+                "date" => FieldTypes::Date(0),
+                _ => FieldTypes::Integer(0),
             };
         }
     }

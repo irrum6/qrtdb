@@ -114,6 +114,12 @@ pub mod statements {
         pub fn sttype(&self) -> StatementCategory {
             return self.st_type.clone();
         }
+        pub fn get_nouns(&self) -> Vec<String> {
+            return self.nouns.clone();
+        }
+        pub fn get(&self, s: &str) {
+            //return property
+        }
         pub fn prepare(&mut self) -> PrepareResult {
             let tokens: Vec<&str> = self.text.split(" ").collect();
             for token in tokens {
@@ -128,8 +134,10 @@ pub mod statements {
                     continue;
                 }
                 let dmltype = DMLStatementTypes::from(token);
-                if dmltype != DMLStatementTypes::NONVALID {
+                if dmltype == DMLStatementTypes::NONVALID {
                     self.st_type = StatementCategory::UNRECOGNIZED;
+                } else {
+                    self.st_type = StatementCategory::DMLStatement(dmltype);
                 }
             }
 

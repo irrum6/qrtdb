@@ -11,7 +11,9 @@ pub mod db4 {
 
     struct Database4 {
         databases: Vec<Database>,
-        database_indexes: HashMap<String, usize>,
+        database_indexes: HashMap<String, u64>,
+        dbindex: u64,
+        working_database_index: u64,
     }
 
     impl Database4 {
@@ -19,17 +21,27 @@ pub mod db4 {
             let databases: Vec<Database> = Vec::new();
             let tables: Vec<Table> = Vec::new();
 
-            let database_indexes: HashMap<String, usize> = HashMap::new();
-
+            let database_indexes: HashMap<String, u64> = HashMap::new();
+            let dbindex = 0;
+            let working_database_index = 0;
             return Database4 {
                 databases,
                 database_indexes,
+                dbindex,
+                working_database_index,
             };
         }
 
         fn create_database(&mut self, name: &str) {
             let database = Database::new(name);
             self.databases.push(database);
+            self.dbindex += 1;
+            self.database_indexes.insert(String::from(name), self.dbindex);
+        }
+
+        pub fn set_working_database(&mut self, name: String) {
+            let dab_index = self.database_indexes.get(&name).unwrap();
+            self.working_database_index = *dab_index;
         }
 
         fn create_table() {}
@@ -46,9 +58,14 @@ pub mod db4 {
 
         fn table_info() {}
 
-        fn ls_tables(&self, name: &str) {}
+        fn ls_tables(&self, name: &str) {
+            let dab_index = self.database_indexes.get(name).unwrap();
+            self.databases[*dab_index as usize].ls_tables();
+        }
 
-        fn insert_into_table() {}
+        fn insert_into_table(&mut self, dbindex: u64, tablename: String, s: Statement) -> QueryResult {
+            return self.databases[dbindex as usize].insert(tablename, s);
+        }
 
         fn select_from_table() {}
 
@@ -60,6 +77,27 @@ pub mod db4 {
             match s.sttype() {
                 StatementCategory::DMLStatement(DMLStatementTypes::INSERT) => {
                     // identify table
+                    let nouns = s.get_nouns();
+                    if nouns.len() > 2 {
+                        let dbname = nouns[0].clone();
+                        let namespace = nouns[1].clone();
+                        let tablename = nouns[2].clone();
+                        let dab_index = self.database_indexes.get(&dbname).unwrap();
+
+                        let tablename_full = Database::compose_table_name(&namespace, &tablename);
+
+                        return self.insert_into_table(*dab_index, tablename_full, s);
+
+                        // drop(nouns);
+                    }
+
+                    if nouns.len() > 1 {}
+                    // single identifier table
+
+                    //get database index
+                    //get table full name
+                    // insert
+
                     //get fields
                     //get values
                     //make record
@@ -72,7 +110,7 @@ pub mod db4 {
             return QueryResult::FAILURE;
         }
 
-        pub fn process_statement(&self, line: &String) {
+        pub fn process_statement(&mut self, line: &String) {
             let statements: Vec<&str> = line.split(";").collect();
             for stmt in statements {
                 let mut st = Statement::new(stmt);
@@ -84,6 +122,7 @@ pub mod db4 {
                     }
                     PrepareResult::SUCCESS => {
                         // execute staments
+                        self.execute(st);
                     }
                 };
             }
