@@ -45,7 +45,7 @@ pub mod table {
             return None;
         }
         pub fn set(&self, name: String, t: TableField) {
-            
+
         }
         pub fn serialize_record(record: Record) -> Vec<u8> {
             let data: Vec<u8> = Vec::new();
@@ -78,6 +78,9 @@ pub mod table {
         }
         pub fn tname(&self) -> String {
             return self.name.clone();
+        }
+        pub fn get_fields(&self)-> Vec<TableField>{
+            return self.fields.clone();
         }
         pub fn insert(&mut self) {}
         pub fn select(&mut self) {}

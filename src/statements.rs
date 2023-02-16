@@ -17,8 +17,12 @@ pub mod statements {
         NONVALID,
     }
 
-    impl DDLStatementTypes {}
-    #[derive(Clone)]
+    impl DDLStatementTypes {
+        pub fn from(token: &str) -> DDLStatementTypes {
+            return DDLStatementTypes::CREATE_DATABASE;
+        }
+    }
+    #[derive(Clone, PartialEq)]
     pub enum DMLStatementTypes {
         INSERT,
         SELECT,
@@ -82,13 +86,15 @@ pub mod statements {
         UnrecognizedStatement,
     }
 
-    pub enum QueryResult{
+    pub enum QueryResult {
         SUCCESS,
-        FAILURE
+        FAILURE,
     }
 
     pub struct Statement {
         st_type: StatementCategory,
+        nouns: Vec<String>,
+        criteria: Vec<String>,
         text: String,
     }
 
@@ -96,32 +102,36 @@ pub mod statements {
         pub fn new(line: &str) -> Statement {
             let st_type = StatementCategory::UNRECOGNIZED;
             let text = String::from(line.trim());
-            return Statement { st_type, text };
+            let nouns: Vec<String> = Vec::new();
+            let criteria: Vec<String> = Vec::new();
+            return Statement {
+                st_type,
+                text,
+                nouns,
+                criteria,
+            };
+        }
+        pub fn sttype(&self) -> StatementCategory {
+            return self.st_type.clone();
         }
         pub fn prepare(&mut self) -> PrepareResult {
             let tokens: Vec<&str> = self.text.split(" ").collect();
-
-            let mut nouns: Vec<&str> = Vec::new();
-            let mut verbs: Vec<&str> = Vec::new();
-            //where
-            let mut criterias: Vec<&str> = Vec::new();
             for token in tokens {
                 if token.contains("@") {
                     // @noun
-                    nouns = token.split("::").collect();
+                    self.nouns = token.split("::").map(|e| String::from(e)).collect();
                     continue;
                 }
                 if token.contains("[") {
                     // @noun
-                    criterias = token.split(",").collect();
+                    self.criteria = token.split(",").map(|e| String::from(e)).collect();
                     continue;
                 }
-
+                let dmltype = DMLStatementTypes::from(token);
+                if dmltype != DMLStatementTypes::NONVALID {
+                    self.st_type = StatementCategory::UNRECOGNIZED;
+                }
             }
-
-            // drop(nouns);
-
-            println!("{:?}", nouns);
 
             //splite by white space
             //check for constraints
@@ -133,15 +143,11 @@ pub mod statements {
             // let values #(gela,19)# insert
             // if multiple tokens
             // let fields $name$
-            if self.text.contains("insert") {
-                self.st_type = StatementCategory::DMLStatement(DMLStatementTypes::INSERT);
-                return PrepareResult::SUCCESS;
-            } else if self.text.contains("select") {
-                self.st_type = StatementCategory::DMLStatement(DMLStatementTypes::SELECT);
-                return PrepareResult::SUCCESS;
-            }
-            return PrepareResult::UnrecognizedStatement;
+
+            return match self.st_type {
+                StatementCategory::UNRECOGNIZED => PrepareResult::UnrecognizedStatement,
+                _ => PrepareResult::SUCCESS,
+            };
         }
-        pub fn execute(&mut self, db: Database) {}
     }
 }

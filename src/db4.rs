@@ -3,14 +3,14 @@ pub mod db4 {
     use std::collections::HashMap;
 
     use crate::{
-        qrtlib::{Database, MetaCommands, Table, TableField},
-        statements::statements::Statement,
+        qrtlib::{Database, MetaCommands, PrepareResult, QueryResult, Table, TableField},
+        statements::statements::{DMLStatementTypes, Statement, StatementCategory},
     };
 
     // meta commands
 
     struct Database4 {
-        databases: Vec<Database>,        
+        databases: Vec<Database>,
         database_indexes: HashMap<String, usize>,
     }
 
@@ -31,7 +31,7 @@ pub mod db4 {
             let database = Database::new(name);
             self.databases.push(database);
         }
-        
+
         fn create_table() {}
 
         fn alter_table() {}
@@ -56,13 +56,36 @@ pub mod db4 {
 
         fn delete_rows_in_table() {}
 
-        fn execute() {}
+        fn execute(&mut self, s: Statement) -> QueryResult {
+            match s.sttype() {
+                StatementCategory::DMLStatement(DMLStatementTypes::INSERT) => {
+                    // identify table
+                    //get fields
+                    //get values
+                    //make record
+                    //inserts
+                    // let values = self
+                }
+                StatementCategory::DMLStatement(DMLStatementTypes::SELECT) => {}
+                _ => {}
+            }
+            return QueryResult::FAILURE;
+        }
 
         pub fn process_statement(&self, line: &String) {
             let statements: Vec<&str> = line.split(";").collect();
             for stmt in statements {
                 let mut st = Statement::new(stmt);
-                st.prepare();
+                let result = st.prepare();
+                match result {
+                    PrepareResult::UnrecognizedStatement => {
+                        println!("Some of the statements failed, aborting");
+                        break;
+                    }
+                    PrepareResult::SUCCESS => {
+                        // execute staments
+                    }
+                };
             }
         }
         pub fn help() {}
@@ -78,7 +101,6 @@ pub mod db4 {
 
         db4.databases[0].add_namespace("sys");
         //create sys table
-
 
         let mut line = String::new();
 
