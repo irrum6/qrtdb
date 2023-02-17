@@ -35,8 +35,8 @@ pub mod db4 {
         fn create_database(&mut self, name: &str) {
             let database = Database::new(name);
             self.databases.push(database);
-            self.dbindex += 1;
             self.database_indexes.insert(String::from(name), self.dbindex);
+            self.dbindex += 1;
         }
 
         pub fn set_working_database(&mut self, name: String) {
@@ -60,61 +60,83 @@ pub mod db4 {
 
         fn ls_tables(&self, name: &str) {
             let dab_index = self.database_indexes.get(name).unwrap();
-            self.databases[*dab_index as usize].ls_tables();
+            self.databases[*dab_index as usize].ls_tables("");
         }
 
         fn insert_into_table(&mut self, dbindex: u64, tablename: String, s: Statement) -> QueryResult {
             return self.databases[dbindex as usize].insert(tablename, s);
         }
 
-        fn select_from_table() {}
+        fn select_from_table(&mut self, dbindex: u64, tablename: String, s: Statement) -> QueryResult {
+            println!("sft");
+            return self.databases[dbindex as usize].select(tablename, s);
+        }
 
         fn update_rows_in_table() {}
 
         fn delete_rows_in_table() {}
 
         fn execute(&mut self, s: Statement) -> QueryResult {
+            // println!("xct");
+            // identify table
+            let nouns = s.get_nouns();
+            if nouns.len() == 0 {
+                println!("no ids were provided");
+                return QueryResult::FAILURE;
+            }
+
+            let mut dbname = String::new();
+            let mut namespace = String::new();
+            let mut tablename = String::new();
+            let mut tablename_full = String::new();
+            let mut dab_index: u64 = 0;
+            if nouns.len() > 2 {
+                dbname = nouns[0].clone();
+                namespace = nouns[1].clone();
+                tablename = nouns[2].clone();
+
+                if let Some(db_index) = self.database_indexes.get(&dbname) {
+                    tablename_full = Database::compose_table_name(&namespace, &tablename);
+                    dab_index = *db_index;
+                } else {
+                    println!("no database were found with such name");
+                    return QueryResult::FAILURE;
+                };
+                // drop(nouns);
+            } else if nouns.len() > 1 {
+                namespace = nouns[0].clone();
+                tablename = nouns[1].clone();
+                dab_index = self.working_database_index;
+
+                tablename_full = Database::compose_table_name(&namespace, &tablename);
+            } else {
+                tablename = nouns[0].clone();
+                dab_index = self.working_database_index;
+                namespace = self.databases[dab_index as usize].get_namespace();
+
+                tablename_full = Database::compose_table_name(&namespace, &tablename);
+            }
+
             match s.sttype() {
                 StatementCategory::DMLStatement(DMLStatementTypes::INSERT) => {
-                    // identify table
-                    let nouns = s.get_nouns();
-                    if nouns.len() > 2 {
-                        let dbname = nouns[0].clone();
-                        let namespace = nouns[1].clone();
-                        let tablename = nouns[2].clone();
-
-                        if let Some(dab_index) = self.database_indexes.get(&dbname) {
-                            let tablename_full = Database::compose_table_name(&namespace, &tablename);
-                            return self.insert_into_table(*dab_index, tablename_full, s);
-                        } else {
-                            println!("no database were found with such name");
-                            return QueryResult::FAILURE;
-                        };
-                        // drop(nouns);
-                    }
-
-                    if nouns.len() > 1 {}
-                    // single identifier table
-
-                    //get database index
-                    //get table full name
-                    // insert
-
-                    //get fields
-                    //get values
-                    //make record
-                    //inserts
-                    // let values = self
+                    return self.insert_into_table(dab_index, tablename_full, s);
                 }
-                StatementCategory::DMLStatement(DMLStatementTypes::SELECT) => {}
+                StatementCategory::DMLStatement(DMLStatementTypes::SELECT) => {
+                    return self.select_from_table(dab_index, tablename_full, s);
+                }
                 _ => {}
             }
             return QueryResult::FAILURE;
         }
 
         pub fn process_statement(&mut self, line: &String) {
-            let statements: Vec<&str> = line.split(";").collect();
+            let statements: Vec<&str> = line.trim().split(";").collect();
+            println!("{:?}", statements);
+            // return;
             for stmt in statements {
+                if stmt.len() == 0 {
+                    continue;
+                }
                 let mut st = Statement::new(stmt);
                 let result = st.prepare();
                 match result {
@@ -146,15 +168,15 @@ pub mod db4 {
         let vmajor = TableField::new("version_major", "int");
         let vminor = TableField::new("version_minor", "int");
         let vpatch = TableField::new("version_patch", "int");
-        let vname = TableField::new("version_name", "int");
+        let vname = TableField::new("version_name", "vchar");
         let fields = vec![date, vmajor, vminor, vpatch, vname];
-        
+
         db4.databases[0].create_table("sysinfo", fields, "sys");
 
         let mut line = String::new();
 
         loop {
-            println!("SQRite > ");
+            println!("Hettooluykaa:6 > ");
             stdin().read_line(&mut line).unwrap();
             // process line
             if line.contains(".") {

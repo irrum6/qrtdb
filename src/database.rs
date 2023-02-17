@@ -9,6 +9,7 @@ pub mod database {
     pub struct Database {
         name: String,
         namespaces: Vec<String>,
+        namespace: String,
         tables: Vec<Table>,
         table_indexes: HashMap<String, u64>,
         tindex: u64,
@@ -24,6 +25,7 @@ pub mod database {
             return Database {
                 name,
                 namespaces,
+                namespace: String::new(),
                 tables,
                 table_indexes,
                 tindex: 0,
@@ -43,6 +45,17 @@ pub mod database {
         pub fn remove_namespace(&mut self, name: &str) {
             let namespace = String::from(name);
         }
+
+        pub fn set_namespace(&mut self, name: &str) {
+            if !self.namespaces.contains(&String::from(name)) {
+                return;
+            }
+            self.namespace = String::from(name);
+        }
+        pub fn get_namespace(&self) -> String {
+            return self.namespace.clone();
+        }
+
         pub fn compose_table_name(namespace: &str, name: &str) -> String {
             let mut tname = String::from(namespace);
             tname.push_str("_");
@@ -58,8 +71,9 @@ pub mod database {
             let full_table_name = Database::compose_table_name(namespace, name);
             let table = Table::new(full_table_name.as_str(), fields, namespace);
             self.tables.push(table);
+
+            self.table_indexes.insert(String::from(full_table_name), self.tindex);
             self.tindex += 1;
-            self.table_indexes.insert(String::from(name), self.tindex);
             return QueryResult::SUCCESS;
         }
         pub fn remove_table(&mut self, name: &str) {
@@ -76,19 +90,34 @@ pub mod database {
             self.table_indexes.insert(tname, *index);
         }
 
-
-        pub fn ls_tables(&self) {
-
+        pub fn ls_tables(&self, ns: &str) {
+            //if empty all
+            //if not by namespace
+            if ns == "" {
+                for t in &self.tables {
+                    println!("{}", t.tname());
+                }
+            }
         }
-        fn get_table_index(&self, tablename: String) -> u64 {
-            let index = self.table_indexes.get(&tablename).unwrap();
-            return *index;
-        }
+
         pub fn insert(&mut self, tablename: String, s: Statement) -> QueryResult {
-            let table_index = self.get_table_index(tablename);
-            return self.tables[table_index as usize].insert(s);
+            // println!("{}", tablename);
+            if let Some(table_index) = self.table_indexes.get(&tablename) {
+                return self.tables[*table_index as usize].insert(s);
+            } else {
+                println!("no tables were found with such name");
+                return QueryResult::FAILURE;
+            };
         }
-        pub fn select(&mut self) {}
+        pub fn select(&mut self, tablename: String, s: Statement) -> QueryResult {
+            // println!("{}", tablename);
+            if let Some(table_index) = self.table_indexes.get(&tablename) {
+                return self.tables[*table_index as usize].select(s);
+            } else {
+                println!("no tables were found with such name");
+                return QueryResult::FAILURE;
+            };
+        }
         pub fn update(&mut self) {}
         pub fn delete(&mut self, index: usize) {}
     }

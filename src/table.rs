@@ -1,5 +1,8 @@
 pub mod table {
-    use crate::{qrtlib::{FieldTypes, Fixedchar, QueryResult, Varchar}, statements::statements::Statement};
+    use crate::{
+        qrtlib::{FieldTypes, Fixedchar, QueryResult, Varchar},
+        statements::statements::Statement,
+    };
 
     #[derive(Clone)]
     pub struct TableField {
@@ -19,6 +22,19 @@ pub mod table {
 
         pub fn name(&self) -> String {
             return self.name.clone();
+        }
+
+        pub fn set(&mut self, s: String) {
+            // println!("{}",self.name());
+            let tf = match &self.tf_type {
+                FieldTypes::Number(_) => FieldTypes::Number(s.parse().expect("f64")),
+                FieldTypes::Integer(_) => FieldTypes::Integer(s.parse().expect("u64")),
+                FieldTypes::SignedInteger(_) => FieldTypes::SignedInteger(s.parse().expect("i64")),
+                FieldTypes::Varchar(v) => FieldTypes::Varchar(Varchar::new(v.len(), s)),
+                FieldTypes::Fxchar(v) => FieldTypes::Fxchar(Fixedchar::new(v.len(), s)),
+                FieldTypes::Date(_) => FieldTypes::Date(s.parse().expect("number")),
+            };
+            self.tf_type = tf;
         }
 
         pub fn serialize(t: TableField) -> Vec<u8> {
@@ -82,9 +98,13 @@ pub mod table {
             fields.push(field1);
             return Record { table: tname, fields };
         }
-        pub fn new(fields: Vec<TableField>, values: Vec<String>) -> Record {
-            return Record::dummy();
+        // pub fn new(fields: Vec<TableField>, values: Vec<String>) -> Record {
+        //     return Record::dummy();
+        // }
+        pub fn new(fields: Vec<TableField>, table: String) -> Record {
+            return Record { table, fields };
         }
+
         pub fn get(&self, name: String) -> Option<TableField> {
             for field in &self.fields.clone() {
                 if field.name == name {
@@ -129,30 +149,50 @@ pub mod table {
         pub fn get_fields(&self) -> Vec<TableField> {
             return self.fields.clone();
         }
+
         pub fn insert(&mut self, s: Statement) -> QueryResult {
             let inserttext = s.verbs[0].clone();
             let binding = inserttext.replace("#", "");
             let values: Vec<&str> = binding.split(",").collect();
-            println!("{:?}",values);
-            return QueryResult::SUCCESS;
-            let fields = self.get_fields();
+            // println!("{:?}",values);
+            // return QueryResult::SUCCESS;
+            let mut fields = self.get_fields();
             if values.len() != fields.len() {
                 return QueryResult::FAILURE;
             }
-            for f in fields {
-                match f.tf_type {
-                    FieldTypes::Number(f) => {
-                        // f.from_string();
-                    }
-                    _ => {}
-                }
+            let len = values.len();
+            for i in 0..len {
+                fields[i].set(String::from(values[i]));
             }
-            //get fields
-            //create record
-            //push int records
+
+            let record = Record::new(fields, self.tname());
+            self.records.push(record);
+
             return QueryResult::SUCCESS;
         }
-        pub fn select(&mut self, data: String) -> QueryResult {
+        pub fn select(&mut self, s: Statement) -> QueryResult {
+            let selecttext = s.verbs[0].clone();
+            let fields: Vec<String> = selecttext.replace("$", "").split(",").map(|e| String::from(e)).collect();
+
+            println!("{:?}",fields);
+            println!("{}",&self.records.len());
+
+            for r in &self.records {
+                for f in &fields {
+                    if let Some(v) = &r.get(f.to_string()) {
+                        match &v.tf_type {
+                            FieldTypes::Number(x) => println!("{}:{}", f, x),
+                            FieldTypes::Integer(x) => println!("{}:{}", f, x),
+                            FieldTypes::SignedInteger(x) => println!("{}:{}", f, x),
+                            FieldTypes::Varchar(x) => println!("{}:{}", f, x.get()),
+                            FieldTypes::Fxchar(x) => println!("{}:{}", f, x.get()),
+                            FieldTypes::Date(x) => println!("{}:{}", f, x),
+                        }
+                    } else {
+                    }
+                }
+            }
+
             return QueryResult::FAILURE;
         }
         pub fn update(&mut self) {}

@@ -50,7 +50,7 @@ pub mod field_types {
             return match fieldname {
                 "number" | "num" => FieldTypes::Number(0.0),
                 "integer" | "int" => FieldTypes::Integer(0),
-                "sigint" | "sig" => FieldTypes::Integer(0),
+                "sigint" | "sig" => FieldTypes::SignedInteger(0),
                 "varchar" | "vchar" => FieldTypes::Varchar(Varchar::new(24, String::new())),
                 "fxchar" | "fchar" => FieldTypes::Fxchar(Fixedchar::new(24, String::new())),
                 "date" => FieldTypes::Date(0),

@@ -34,7 +34,7 @@ pub mod statements {
     impl DMLStatementTypes {
         pub fn from(token: &str) -> DMLStatementTypes {
             if token.len() == 0 {
-                println!("emppty token");
+                println!("empty token");
                 return DMLStatementTypes::NONVALID;
             }
             let chars: Vec<char> = token.chars().collect();
@@ -125,16 +125,21 @@ pub mod statements {
             //return property
         }
         pub fn prepare(&mut self) -> PrepareResult {
-            let tokens: Vec<&str> = self.text.split(" ").collect();
+            let tokens: Vec<&str> = self.text.trim().split(" ").collect();
+            println!("{:?}", tokens);
+
             for token in tokens {
                 if token.contains("@") {
                     // @noun
-                    self.nouns = token.split("::").map(|e| String::from(e)).collect();
+                    self.nouns = token.replace("@", "").split("::").map(|e| String::from(e)).collect();
                     continue;
                 }
                 if token.contains("[") {
                     // @noun
                     self.criteria = token.split(",").map(|e| String::from(e)).collect();
+                    continue;
+                }
+                if token.len() == 0 {
                     continue;
                 }
                 let dmltype = DMLStatementTypes::from(token);
@@ -146,26 +151,16 @@ pub mod statements {
                 }
             }
 
-            if self.verbs.len() > 1 {
-                println!("more than one verb was provided");
+            if self.verbs.len() != 1 {
+                println!("only one verb");
+                if self.verbs.len() > 1 {
+                    println!("more than one verb was provided");
+                }
+                if self.verbs.len() == 0 {
+                    println!("no verb was provided");
+                }
                 return PrepareResult::UnrecognizedStatement;
             }
-
-            if self.verbs.len() == 0 {
-                println!("no verb was provided");
-                return PrepareResult::UnrecognizedStatement;
-            }
-
-            //splite by white space
-            //check for constraints
-            //once valid
-            //return
-            // let action $name$ select
-            // let id @
-            // let where [name=gela,name] it can work with single [ or ] as well
-            // let values #(gela,19)# insert
-            // if multiple tokens
-            // let fields $name$
 
             return match self.st_type {
                 StatementCategory::UNRECOGNIZED => PrepareResult::UnrecognizedStatement,
