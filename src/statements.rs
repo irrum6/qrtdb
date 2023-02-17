@@ -28,10 +28,15 @@ pub mod statements {
         SELECT,
         UPDATE,
         DELETE,
+        ORDER,
         NONVALID,
     }
     impl DMLStatementTypes {
         pub fn from(token: &str) -> DMLStatementTypes {
+            if token.len() == 0 {
+                println!("emppty token");
+                return DMLStatementTypes::NONVALID;
+            }
             let chars: Vec<char> = token.chars().collect();
             let start = chars[0];
             let end = chars[chars.len() - 1];
@@ -39,19 +44,15 @@ pub mod statements {
             if start != end {
                 return DMLStatementTypes::NONVALID;
             }
-            if start == '#' {
-                return DMLStatementTypes::INSERT;
-            }
-            if start == '$' {
-                return DMLStatementTypes::SELECT;
-            }
-            if start == '*' {
-                return DMLStatementTypes::UPDATE;
-            }
-            if start == '!' {
-                return DMLStatementTypes::DELETE;
-            }
-            return DMLStatementTypes::NONVALID;
+
+            return match start {
+                '#' => DMLStatementTypes::INSERT,
+                '$' => DMLStatementTypes::SELECT,
+                '*' => DMLStatementTypes::UPDATE,
+                '!' => DMLStatementTypes::DELETE,
+                '?' => DMLStatementTypes::ORDER,
+                _ => DMLStatementTypes::NONVALID,
+            };
         }
     }
 
@@ -95,6 +96,7 @@ pub mod statements {
         st_type: StatementCategory,
         nouns: Vec<String>,
         criteria: Vec<String>,
+        pub verbs: Vec<String>,
         text: String,
     }
 
@@ -103,11 +105,13 @@ pub mod statements {
             let st_type = StatementCategory::UNRECOGNIZED;
             let text = String::from(line.trim());
             let nouns: Vec<String> = Vec::new();
+            let verbs: Vec<String> = Vec::new();
             let criteria: Vec<String> = Vec::new();
             return Statement {
                 st_type,
                 text,
                 nouns,
+                verbs,
                 criteria,
             };
         }
@@ -138,7 +142,18 @@ pub mod statements {
                     self.st_type = StatementCategory::UNRECOGNIZED;
                 } else {
                     self.st_type = StatementCategory::DMLStatement(dmltype);
+                    self.verbs.push(String::from(token));
                 }
+            }
+
+            if self.verbs.len() > 1 {
+                println!("more than one verb was provided");
+                return PrepareResult::UnrecognizedStatement;
+            }
+
+            if self.verbs.len() == 0 {
+                println!("no verb was provided");
+                return PrepareResult::UnrecognizedStatement;
             }
 
             //splite by white space

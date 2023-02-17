@@ -82,12 +82,14 @@ pub mod db4 {
                         let dbname = nouns[0].clone();
                         let namespace = nouns[1].clone();
                         let tablename = nouns[2].clone();
-                        let dab_index = self.database_indexes.get(&dbname).unwrap();
 
-                        let tablename_full = Database::compose_table_name(&namespace, &tablename);
-
-                        return self.insert_into_table(*dab_index, tablename_full, s);
-
+                        if let Some(dab_index) = self.database_indexes.get(&dbname) {
+                            let tablename_full = Database::compose_table_name(&namespace, &tablename);
+                            return self.insert_into_table(*dab_index, tablename_full, s);
+                        } else {
+                            println!("no database were found with such name");
+                            return QueryResult::FAILURE;
+                        };
                         // drop(nouns);
                     }
 
@@ -139,7 +141,15 @@ pub mod db4 {
         db4.create_database("sys");
 
         db4.databases[0].add_namespace("sys");
-        //create sys table
+
+        let date = TableField::new("date", "vchar");
+        let vmajor = TableField::new("version_major", "int");
+        let vminor = TableField::new("version_minor", "int");
+        let vpatch = TableField::new("version_patch", "int");
+        let vname = TableField::new("version_name", "int");
+        let fields = vec![date, vmajor, vminor, vpatch, vname];
+        
+        db4.databases[0].create_table("sysinfo", fields, "sys");
 
         let mut line = String::new();
 
@@ -163,56 +173,11 @@ pub mod db4 {
             db4.process_statement(&line);
             line.truncate(0);
         }
-        //craete sys database, sys namespace and sys table
-        // sys table columns
-        // name sys
-        // fields version major integer
-        // fields version minor integer
-        // fields version patch integer
-        // computed field version varchar
-        // fields date
-        //write version in
 
-        // namespaces: Vec<Namespace>,
-        // namespace_indexes:HashMap<String,usize>
-        //hasmap
-        //table name index in tables
-        // let mut dblist: Vec<Database> = Vec::new();
+        // fn gela() {
+        //     println!(" I am gela");
+        // }
 
-        // let db1 = Database::new("sys");
-
-        // let mut nslist: Vec<Namespace> = Vec::new();
-
-        // let ns1 = Namespace::new("accounting", db1.dbname());
-        // let ns2 = Namespace::new("students", db1.dbname());
-
-        // nslist.push(ns1);
-        // nslist.push(ns2);
-        // dblist.push(db1);
-
-        // let mut tablelist: Vec<Table> = Vec::new();
-
-        // let TableField { name, field_type }
-
-        // let tf = TableField::new("name", "vchar");
-        // let tf2 = TableField::new("age", "int");
-        // let mut fields: Vec<TableField> = Vec::new();
-
-        // fields.push(tf);
-        // fields.push(tf2);
-
-        // let mut table = Table::new("students", fields, nslist[1].name().as_str());
-
-        // //fields[1]; hell yeah moved
-
-        // tablelist.push(table);
-
-        //split by ; and then by " " (space)
-        //split by , for fields
-        fn gela() {
-            println!(" I am gela");
-        }
-
-        gela();
+        // gela();
     }
 }

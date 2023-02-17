@@ -1,5 +1,5 @@
 pub mod table {
-    use crate::qrtlib::{FieldTypes, Fixedchar, QueryResult, Varchar};
+    use crate::{qrtlib::{FieldTypes, Fixedchar, QueryResult, Varchar}, statements::statements::Statement};
 
     #[derive(Clone)]
     pub struct TableField {
@@ -129,9 +129,12 @@ pub mod table {
         pub fn get_fields(&self) -> Vec<TableField> {
             return self.fields.clone();
         }
-        pub fn insert(&mut self, data: String) -> QueryResult {
-            let binding = data.replace("#", "");
+        pub fn insert(&mut self, s: Statement) -> QueryResult {
+            let inserttext = s.verbs[0].clone();
+            let binding = inserttext.replace("#", "");
             let values: Vec<&str> = binding.split(",").collect();
+            println!("{:?}",values);
+            return QueryResult::SUCCESS;
             let fields = self.get_fields();
             if values.len() != fields.len() {
                 return QueryResult::FAILURE;

@@ -86,7 +86,7 @@ pub mod database {
         }
         pub fn insert(&mut self, tablename: String, s: Statement) -> QueryResult {
             let table_index = self.get_table_index(tablename);
-            return self.tables[table_index as usize].insert(String::new());
+            return self.tables[table_index as usize].insert(s);
         }
         pub fn select(&mut self) {}
         pub fn update(&mut self) {}
