@@ -97,6 +97,15 @@ pub mod database {
                 for t in &self.tables {
                     println!("{}", t.tname());
                 }
+                return;
+            }
+            // else
+            for t in &self.tables {
+                let tname = t.tname();
+                let v: Vec<&str> = tname.split("_").collect();
+                if v[0] == ns {
+                    println!("{}", t.tname());
+                }
             }
         }
 

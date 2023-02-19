@@ -7,8 +7,8 @@ pub mod command_parser {
     }
     impl MetaCommands {
         pub fn from(s: &str) -> MetaCommands {
-            let st = s.trim();
-            return match st {
+            let st:Vec<&str> = s.trim().split(" ").collect();
+            return match st[0] {
                 ".exit" | ".EXIT" | ".X" | ".x" => MetaCommands::EXIT,
                 ".help" | ".HELP" | ".H" | ".h" => MetaCommands::HELP,
                 ".tables" | ".TABLES" | ".T" | ".t" => MetaCommands::TABLES,

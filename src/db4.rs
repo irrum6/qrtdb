@@ -152,7 +152,32 @@ pub mod db4 {
             }
         }
         pub fn help() {}
-        pub fn lstables(&self) {}
+        pub fn ls(&mut self, s: &String) {
+            //over space
+            let x: Vec<&str> = s.trim().split(" ").collect();
+
+            if x.len() > 1 && x[1] != "" {
+                let ids: Vec<String> = x[1].replace("@", "").split("::").map(|e| String::from(e)).collect();
+
+                if let Some(dbindex) = self.database_indexes.get(&ids[0]) {
+                    let dabi = *dbindex;
+                    if ids.len() > 1 {
+                        self.databases[dabi as usize].ls_tables(&ids[1]);
+                    } else {
+                        self.databases[dabi as usize].ls_tables("");
+                    }
+                } else {
+                    println!("no database were found with such name");
+                    return;
+                }
+                return;
+            }
+            //list databases if string empty
+            for d in &self.databases {
+                println!("database:{}", d.dbname());
+            }
+            return;
+        }
     }
 
     // main here
@@ -184,7 +209,7 @@ pub mod db4 {
                 match mc {
                     MetaCommands::EXIT => return,
                     MetaCommands::HELP => Database4::help(),
-                    MetaCommands::TABLES => db4.lstables(),
+                    MetaCommands::TABLES => db4.ls(&line),
                     MetaCommands::UnrecognizedCommand => {
                         println!("Unrecognized meta command")
                     }
