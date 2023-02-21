@@ -74,9 +74,20 @@ pub mod field_types {
                 "integer" | "int" => FieldTypes::Integer(0),
                 "sigint" | "sig" => FieldTypes::SignedInteger(0),
                 "varchar" | "vchar" => FieldTypes::Varchar(Varchar::new(24, String::new())),
-                "fxchar" | "fchar" => FieldTypes::Fxchar(Fixedchar::new(24, String::new())),
+                "fxchar" | "fixchar" | "fchar" => FieldTypes::Fxchar(Fixedchar::new(24, String::new())),
                 "date" => FieldTypes::Date(0),
                 _ => FieldTypes::Integer(0),
+            };
+        }
+
+        pub fn to_strong(f: FieldTypes) -> String {
+            return match f {
+                FieldTypes::Number(_) => String::from("number"),
+                FieldTypes::Integer(_) => String::from("integer"),
+                FieldTypes::SignedInteger(_) => String::from("sigint"),
+                FieldTypes::Varchar(_) => String::from("varchar"),
+                FieldTypes::Fxchar(_) => String::from("fxchar"),
+                FieldTypes::Date(_) => String::from("date"),
             };
         }
     }

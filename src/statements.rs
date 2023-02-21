@@ -1,6 +1,6 @@
 pub mod statements {
     use crate::qrtlib::{Database, FieldTypes, TableField};
-    #[derive(Clone)]
+    #[derive(Clone, PartialEq)]
     pub enum DDLStatementTypes {
         CreateDatabase,
         CreateNamespace,
@@ -24,12 +24,17 @@ pub mod statements {
                 return DDLStatementTypes::NONVALID;
             }
             // let s = String::from(token);
+            println!("{}", token);
             let start = &token[..2];
-            let end = &token[token.len() - 2..2];
+            let end = &token[token.len() - 2..token.len()];
 
-            if start != end {
-                return DDLStatementTypes::NONVALID;
-            }
+            println!("{}", start);
+            println!("{}", end);
+
+            // ignore before better parser
+            // if start != end.chars().rev().collect::<String>() {
+            //     return DDLStatementTypes::NONVALID;
+            // }
 
             return match start {
                 "#d" => DDLStatementTypes::CreateDatabase,
@@ -82,11 +87,25 @@ pub mod statements {
         }
     }
 
-    #[derive(Clone)]
+    #[derive(Clone, PartialEq)]
     pub enum StatementCategory {
         DDLStatement(DDLStatementTypes),
         DMLStatement(DMLStatementTypes),
         UNRECOGNIZED,
+    }
+    impl StatementCategory {
+        pub fn from(token: &str) -> StatementCategory {
+            let dml = DMLStatementTypes::from(token);
+            let ddl = DDLStatementTypes::from(token);
+
+            if ddl != DDLStatementTypes::NONVALID {
+                return StatementCategory::DDLStatement(ddl);
+            } else if dml != DMLStatementTypes::NONVALID {
+                return StatementCategory::DMLStatement(dml);
+            } else {
+                return StatementCategory::UNRECOGNIZED;
+            }
+        }
     }
     #[derive(Clone)]
     pub enum WhereClauses {
@@ -115,7 +134,7 @@ pub mod statements {
                 WhereClauses::Empty => true,
             };
         }
-        pub fn int_cmp(w: &WhereClauses, v: u64, x: u64) -> bool {            
+        pub fn int_cmp(w: &WhereClauses, v: u64, x: u64) -> bool {
             return match w {
                 WhereClauses::Equal => x == v,
                 WhereClauses::NonEqual => x != v,
@@ -283,11 +302,9 @@ pub mod statements {
                     self.criteria = Criteria::en_masse(String::from(token));
                     continue;
                 }
-                let dmltype = DMLStatementTypes::from(token);
-                if dmltype == DMLStatementTypes::NONVALID {
-                    self.st_type = StatementCategory::UNRECOGNIZED;
-                } else {
-                    self.st_type = StatementCategory::DMLStatement(dmltype);
+
+                self.st_type = StatementCategory::from(token);
+                if self.st_type != StatementCategory::UNRECOGNIZED {
                     self.verbs.push(String::from(token));
                 }
             }
