@@ -95,6 +95,7 @@ pub mod table {
     struct Record {
         table: String,
         fields: Vec<TableField>,
+        d: bool,
     }
 
     impl Record {
@@ -103,13 +104,25 @@ pub mod table {
             let field1 = TableField::new("brand", "vchar");
             let mut fields: Vec<TableField> = Vec::new();
             fields.push(field1);
-            return Record { table: tname, fields };
+            return Record {
+                table: tname,
+                fields,
+                d: false,
+            };
         }
         // pub fn new(fields: Vec<TableField>, values: Vec<String>) -> Record {
         //     return Record::dummy();
         // }
         pub fn new(fields: Vec<TableField>, table: String) -> Record {
-            return Record { table, fields };
+            return Record { table, fields, d: false };
+        }
+
+        pub fn setd(&mut self, d: bool) {
+            self.d = d;
+        }
+
+        pub fn d(&self) -> bool {
+            return self.d;
         }
 
         pub fn get(&self, name: String) -> Option<TableField> {
@@ -137,6 +150,7 @@ pub mod table {
             return Record {
                 table: table.tname(),
                 fields,
+                d: true,
             };
         }
     }
@@ -263,8 +277,33 @@ pub mod table {
             return QueryResult::FAILURE;
         }
         pub fn delete(&mut self, s: Statement) -> QueryResult {
-            let index = 0;
-            self.records.swap_remove(index);
+            let crit = s.get_crit();
+
+            if crit.len() == 0 {
+                println!("delete:empty");
+                return QueryResult::FAILURE;
+            }
+            for r in &mut self.records {
+                let mut applies = true;
+                if crit.len() > 0 {
+                    // break;
+                    for c in &crit {
+                        let pname = c.get_pname();
+                        if let Some(v) = &r.get(pname) {
+                            if !c.apply(&v) {
+                                applies = false;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if !applies {
+                    continue;
+                }
+                r.setd(true);
+            }
+            self.records.retain(|x| !x.d());
+
             return QueryResult::FAILURE;
         }
         pub fn serialize() {}
