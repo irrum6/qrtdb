@@ -1,4 +1,6 @@
 pub mod field_types {
+    use crate::qrtlib::WhereClauses;
+
     #[derive(Clone)]
     pub struct Varchar {
         length: u64,
@@ -13,8 +15,17 @@ pub mod field_types {
         pub fn get(&self) -> String {
             return self.value.clone();
         }
-        pub fn len(&self)->u64{
+        pub fn len(&self) -> u64 {
             return self.length;
+        }
+        pub fn compare(&self, other: String, w: WhereClauses) -> bool {
+            return match w {
+                WhereClauses::Equal => self.value == other,
+                WhereClauses::NonEqual => self.value != other,
+                WhereClauses::Greater => self.value > other,
+                WhereClauses::Less => self.value < other,
+                WhereClauses::Empty => true,
+            };
         }
     }
     #[derive(Clone)]
@@ -30,8 +41,19 @@ pub mod field_types {
         pub fn get(&self) -> String {
             return self.value.clone();
         }
-        pub fn len(&self)->u64{
+        pub fn len(&self) -> u64 {
             return self.length;
+        }
+        pub fn compare(&self, other: String, w: WhereClauses) -> bool {
+            // let chars: Vec<char> = self.value.chars().collect();
+            // let otherchars: Vec<char> = self.value.chars().collect();
+            return match w {
+                WhereClauses::Equal => self.value == other,
+                WhereClauses::NonEqual => self.value != other,
+                WhereClauses::Greater => self.value > other,
+                WhereClauses::Less => self.value < other,
+                WhereClauses::Empty => true,
+            };
         }
     }
 

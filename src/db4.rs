@@ -19,7 +19,6 @@ pub mod db4 {
     impl Database4 {
         pub fn new() -> Database4 {
             let databases: Vec<Database> = Vec::new();
-            let tables: Vec<Table> = Vec::new();
 
             let database_indexes: HashMap<String, u64> = HashMap::new();
             let dbindex = 0;
@@ -46,6 +45,8 @@ pub mod db4 {
 
         fn create_table() {}
 
+        fn table_info() {}
+
         fn alter_table() {}
 
         fn drop_table(name: String) {
@@ -55,8 +56,6 @@ pub mod db4 {
             // table.name;
             // }
         }
-
-        fn table_info() {}
 
         fn ls_tables(&self, name: &str) {
             let dab_index = self.database_indexes.get(name).unwrap();
@@ -124,6 +123,8 @@ pub mod db4 {
                 StatementCategory::DMLStatement(DMLStatementTypes::SELECT) => {
                     return self.select_from_table(dab_index, tablename_full, s);
                 }
+                StatementCategory::DMLStatement(DMLStatementTypes::UPDATE) => {}
+                StatementCategory::DMLStatement(DMLStatementTypes::DELETE) => {}
                 _ => {}
             }
             return QueryResult::FAILURE;
@@ -141,7 +142,7 @@ pub mod db4 {
                 let result = st.prepare();
                 match result {
                     PrepareResult::UnrecognizedStatement => {
-                        println!("Some of the statements failed, aborting");
+                        println!("process_statement:Some of the statements failed, aborting");
                         break;
                     }
                     PrepareResult::SUCCESS => {
@@ -178,30 +179,35 @@ pub mod db4 {
             }
             return;
         }
+
+        pub fn init_some(&mut self) {
+            self.create_database("sys");
+
+            self.databases[0].add_namespace("sys");
+
+            let date = TableField::new("date", "vchar");
+            let vmajor = TableField::new("version_major", "int");
+            let vminor = TableField::new("version_minor", "int");
+            let vpatch = TableField::new("version_patch", "int");
+            let vname = TableField::new("version_name", "vchar");
+            let fields = vec![date, vmajor, vminor, vpatch, vname];
+
+            self.databases[0].create_table("sysinfo", fields, "sys");
+        }
     }
 
     // main here
     pub fn rundb4() {
         use std::io::stdin;
         let mut db4 = Database4::new();
-
-        db4.create_database("sys");
-
-        db4.databases[0].add_namespace("sys");
-
-        let date = TableField::new("date", "vchar");
-        let vmajor = TableField::new("version_major", "int");
-        let vminor = TableField::new("version_minor", "int");
-        let vpatch = TableField::new("version_patch", "int");
-        let vname = TableField::new("version_name", "vchar");
-        let fields = vec![date, vmajor, vminor, vpatch, vname];
-
-        db4.databases[0].create_table("sysinfo", fields, "sys");
+        db4.init_some();
 
         let mut line = String::new();
+        //#18,0,2,3,a# @sys::sys::sysinfo;#19,0,2,3,a# @sys::sys::sysinfo;#20,0,2,3,a# @sys::sys::sysinfo;#21,0,2,3,a# @sys::sys::sysinfo;
+        // $date$ @sys::sys::sysinfo;
 
         loop {
-            println!("Hettooluykaa:6 > ");
+            println!("HTLK > ");
             stdin().read_line(&mut line).unwrap();
             // process line
             if line.contains(".") {

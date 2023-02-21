@@ -1,7 +1,5 @@
-SQRite
+HTLK - Hettooluykaa
 
 small sql like database in rust
 
-inspired by
-
-https://cstack.github.io/db_tutorial/
+inspired by https://cstack.github.io/db_tutorial/

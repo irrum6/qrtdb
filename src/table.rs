@@ -37,6 +37,13 @@ pub mod table {
             self.tf_type = tf;
         }
 
+        pub fn compare(t: TableField, t2: TableField) -> bool {
+            return true;
+        }
+        pub fn typef(&self) -> FieldTypes {
+            return self.tf_type.clone();
+        }
+
         pub fn serialize(t: TableField) -> Vec<u8> {
             return match t.tf_type {
                 FieldTypes::Number(num) => num.to_be_bytes().to_vec(),
@@ -174,10 +181,28 @@ pub mod table {
             let selecttext = s.verbs[0].clone();
             let fields: Vec<String> = selecttext.replace("$", "").split(",").map(|e| String::from(e)).collect();
 
-            println!("{:?}",fields);
-            println!("{}",&self.records.len());
+            let crit = s.get_crit();
+            println!("{:?}", crit.len());
+            println!("{:?}", fields);
+            println!("records:{}", &self.records.len());
 
             for r in &self.records {
+                let mut applies = true;
+                if crit.len() > 0 {
+                    // break;
+                    for c in &crit {
+                        let pname = c.get_pname();
+                        if let Some(v) = &r.get(pname) {
+                            if !c.apply(&v) {
+                                applies = false;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if !applies {
+                    continue;
+                }
                 for f in &fields {
                     if let Some(v) = &r.get(f.to_string()) {
                         match &v.tf_type {
@@ -195,9 +220,13 @@ pub mod table {
 
             return QueryResult::FAILURE;
         }
-        pub fn update(&mut self) {}
-        pub fn delete(&mut self, index: usize) {
+        pub fn update(&mut self) -> QueryResult {
+            return QueryResult::FAILURE;
+        }
+        pub fn delete(&mut self, s: Statement) -> QueryResult {
+            let index = 0;
             self.records.swap_remove(index);
+            return QueryResult::FAILURE;
         }
         pub fn serialize() {}
         pub fn deserialize() {}
