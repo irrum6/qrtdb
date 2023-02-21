@@ -71,9 +71,13 @@ pub mod db4 {
             return self.databases[dbindex as usize].select(tablename, s);
         }
 
-        fn update_rows_in_table() {}
+        fn update_rows_in_table(&mut self, dbindex: u64, tablename: String, s: Statement) -> QueryResult {
+            return self.databases[dbindex as usize].update(tablename, s);
+        }
 
-        fn delete_rows_in_table() {}
+        fn delete_rows_in_table(&mut self, dbindex: u64, tablename: String, s: Statement) -> QueryResult {
+            return self.databases[dbindex as usize].delete(tablename, s);
+        }
 
         fn execute(&mut self, s: Statement) -> QueryResult {
             // println!("xct");
@@ -123,8 +127,12 @@ pub mod db4 {
                 StatementCategory::DMLStatement(DMLStatementTypes::SELECT) => {
                     return self.select_from_table(dab_index, tablename_full, s);
                 }
-                StatementCategory::DMLStatement(DMLStatementTypes::UPDATE) => {}
-                StatementCategory::DMLStatement(DMLStatementTypes::DELETE) => {}
+                StatementCategory::DMLStatement(DMLStatementTypes::UPDATE) => {
+                    return self.update_rows_in_table(dab_index, tablename_full, s);
+                }
+                StatementCategory::DMLStatement(DMLStatementTypes::DELETE) => {
+                    return self.delete_rows_in_table(dab_index, tablename_full, s);
+                }
                 _ => {}
             }
             return QueryResult::FAILURE;

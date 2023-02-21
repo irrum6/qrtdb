@@ -120,7 +120,14 @@ pub mod table {
             }
             return None;
         }
-        pub fn set(&self, name: String, t: TableField) {}
+        pub fn set(&mut self, name: String, v: String) {
+            for field in &mut self.fields {
+                if field.name == name {
+                    field.set(v);
+                    break;
+                }
+            }
+        }
         pub fn serialize_record(record: Record) -> Vec<u8> {
             let data: Vec<u8> = Vec::new();
             return data;
@@ -220,7 +227,39 @@ pub mod table {
 
             return QueryResult::FAILURE;
         }
-        pub fn update(&mut self) -> QueryResult {
+        pub fn update(&mut self, s: Statement) -> QueryResult {
+            let crit = s.get_crit();
+            let update_text = s.verbs[0].clone();
+            let fields: Vec<String> = update_text.replace("*", "").split(",").map(|e| String::from(e)).collect();
+
+            for r in &mut self.records {
+                let mut applies = true;
+                if crit.len() > 0 {
+                    // break;
+                    for c in &crit {
+                        let pname = c.get_pname();
+                        if let Some(v) = &r.get(pname) {
+                            if !c.apply(&v) {
+                                applies = false;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if !applies {
+                    continue;
+                }
+                for f in &fields {
+                    let split_updater: Vec<String> = f.split("=").map(|e| String::from(e)).collect();
+                    if split_updater.len() != 2 {
+                        // ignore and continue
+                        continue;
+                    }
+                    let pname = split_updater[0].clone();
+                    let value = split_updater[1].clone();
+                    r.set(pname, value);
+                }
+            }
             return QueryResult::FAILURE;
         }
         pub fn delete(&mut self, s: Statement) -> QueryResult {

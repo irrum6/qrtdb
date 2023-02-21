@@ -127,7 +127,21 @@ pub mod database {
                 return QueryResult::FAILURE;
             };
         }
-        pub fn update(&mut self) {}
-        pub fn delete(&mut self, index: usize) {}
+        pub fn update(&mut self, tablename: String, s: Statement)-> QueryResult {
+            if let Some(table_index) = self.table_indexes.get(&tablename) {
+                return self.tables[*table_index as usize].update(s);
+            } else {
+                println!("no tables were found with such name");
+                return QueryResult::FAILURE;
+            };
+        }
+        pub fn delete(&mut self, tablename: String, s: Statement)-> QueryResult {
+            if let Some(table_index) = self.table_indexes.get(&tablename) {
+                return self.tables[*table_index as usize].delete(s);
+            } else {
+                println!("no tables were found with such name");
+                return QueryResult::FAILURE;
+            };
+        }
     }
 }
