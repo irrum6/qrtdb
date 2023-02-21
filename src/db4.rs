@@ -203,8 +203,10 @@ pub mod db4 {
         db4.init_some();
 
         let mut line = String::new();
-        //#18,0,2,3,a# @sys::sys::sysinfo;#19,0,2,3,a# @sys::sys::sysinfo;#20,0,2,3,a# @sys::sys::sysinfo;#21,0,2,3,a# @sys::sys::sysinfo;
+        //#18,0,2,1,a# @sys::sys::sysinfo;#19,0,2,2,a# @sys::sys::sysinfo;#20,0,2,3,a# @sys::sys::sysinfo;#21,0,2,4,a# @sys::sys::sysinfo;
         // $date$ @sys::sys::sysinfo;
+        // $date$ @sys::sys::sysinfo [date<>21];
+        // $version_patch$ @sys::sys::sysinfo [date!=19];
 
         loop {
             println!("HTLK > ");

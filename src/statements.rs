@@ -115,7 +115,7 @@ pub mod statements {
                 WhereClauses::Empty => true,
             };
         }
-        pub fn int_cmp(w: &WhereClauses, v: u64, x: u64) -> bool {
+        pub fn int_cmp(w: &WhereClauses, v: u64, x: u64) -> bool {            
             return match w {
                 WhereClauses::Equal => x == v,
                 WhereClauses::NonEqual => x != v,
@@ -183,14 +183,17 @@ pub mod statements {
             if token.contains("=") {
                 pat = "=";
             }
-            if token.contains("!=") || token.contains("<>") {
-                pat = "!="
-            }
             if token.contains(">") {
-                pat = ">"
+                pat = ">";
             }
             if token.contains("<") {
-                pat = "<"
+                pat = "<";
+            }
+            if token.contains("!=") {
+                pat = "!=";
+            }
+            if token.contains("<>") {
+                pat = "<>";
             }
             if pat.len() > 0 {
                 let x: Vec<String> = token.trim().split(pat).map(|e| String::from(e)).collect();
