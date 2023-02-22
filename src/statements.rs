@@ -32,9 +32,9 @@ pub mod statements {
             println!("{}", end);
 
             // ignore before better parser
-            // if start != end.chars().rev().collect::<String>() {
-            //     return DDLStatementTypes::NONVALID;
-            // }
+            if String::from(start) != end.chars().rev().collect::<String>() {
+                return DDLStatementTypes::NONVALID;
+            }
 
             return match start {
                 "#d" => DDLStatementTypes::CreateDatabase,

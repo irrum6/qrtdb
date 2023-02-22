@@ -256,14 +256,7 @@ pub mod db4 {
         let mut db4 = Database4::new();
         db4.init_some();
 
-        let mut line = String::new();
-        //#18,0,2,1,a# @sys::info::infotable;#19,0,2,2,a# @sys::info::infotable;#20,0,2,3,a# @sys::info::infotable;#21,0,2,4,a# @sys::info::infotable;
-        //#22,0,3,1,d# @sys::info::infotable;#23,0,3,2,e# @sys::info::infotable;#24,0,4,2,f# @sys::info::infotable;#25,0,5,1,g# @sys::info::infotable;
-        // $date$ @sys::info::infotable;
-        // $date$ @sys::info::infotable [date<>21];
-        // $version_patch$ @sys::info::infotable [date!=19];
-        // $version_minor$ @sys::info::infotable;
-        //
+        let mut line = String::new();        
 
         loop {
             println!("HTLK > ");
