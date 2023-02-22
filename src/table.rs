@@ -24,14 +24,14 @@ pub mod table {
             return self.name.clone();
         }
 
-        pub fn set(&mut self, s: String) {
+        pub fn set(&mut self, s: &String) {
             // println!("{}",self.name());
             let tf = match &self.tf_type {
                 FieldTypes::Number(_) => FieldTypes::Number(s.parse().expect("f64")),
                 FieldTypes::Integer(_) => FieldTypes::Integer(s.parse().expect("u64")),
                 FieldTypes::SignedInteger(_) => FieldTypes::SignedInteger(s.parse().expect("i64")),
-                FieldTypes::Varchar(v) => FieldTypes::Varchar(Varchar::new(v.len(), s)),
-                FieldTypes::Fxchar(v) => FieldTypes::Fxchar(Fixedchar::new(v.len(), s)),
+                FieldTypes::Varchar(v) => FieldTypes::Varchar(Varchar::new(v.len(), s.clone())),
+                FieldTypes::Fxchar(v) => FieldTypes::Fxchar(Fixedchar::new(v.len(), s.clone())),
                 FieldTypes::Date(_) => FieldTypes::Date(s.parse().expect("number")),
             };
             self.tf_type = tf;
@@ -133,7 +133,7 @@ pub mod table {
             }
             return None;
         }
-        pub fn set(&mut self, name: String, v: String) {
+        pub fn set(&mut self, name: String, v: &String) {
             for field in &mut self.fields {
                 if field.name == name {
                     field.set(v);
@@ -160,6 +160,7 @@ pub mod table {
         fields: Vec<TableField>,
         namespace: String,
         records: Vec<Record>,
+        ridCounter: u64,
     }
     impl Table {
         pub fn new(name: &str, fields: Vec<TableField>, namespace: &str) -> Table {
@@ -169,7 +170,12 @@ pub mod table {
                 fields,
                 namespace: String::from(namespace),
                 records,
+                ridCounter: 0,
             };
+        }
+        pub fn insert_id_column(&mut self) {
+            let id = TableField::new("id", "int");
+            self.fields.push(id);
         }
         pub fn tname(&self) -> String {
             return self.name.clone();
@@ -177,20 +183,30 @@ pub mod table {
         pub fn get_fields(&self) -> Vec<TableField> {
             return self.fields.clone();
         }
+        pub fn get_recordid_counter(&self) -> u64 {
+            return self.ridCounter;
+        }
+        pub fn increment_recordid(&mut self) {
+            return self.ridCounter += 1;
+        }
 
         pub fn insert(&mut self, s: Statement) -> QueryResult {
             let inserttext = s.verbs[0].clone();
             let binding = inserttext.replace("#", "");
-            let values: Vec<&str> = binding.split(",").collect();
+            let mut values: Vec<String> = binding.split(",").map(|e| e.to_string()).collect();
+            let rid = self.get_recordid_counter().to_string();
+            values.push(rid);
             // println!("{:?}",values);
             // return QueryResult::SUCCESS;
             let mut fields = self.get_fields();
             if values.len() != fields.len() {
                 return QueryResult::FAILURE;
             }
+            self.increment_recordid();
+
             let len = values.len();
             for i in 0..len {
-                fields[i].set(String::from(values[i]));
+                fields[i].set(&values[i]);
             }
 
             let record = Record::new(fields, self.tname());
@@ -271,7 +287,7 @@ pub mod table {
                     }
                     let pname = split_updater[0].clone();
                     let value = split_updater[1].clone();
-                    r.set(pname, value);
+                    r.set(pname, &value);
                 }
             }
             return QueryResult::FAILURE;

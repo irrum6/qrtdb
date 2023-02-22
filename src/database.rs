@@ -107,7 +107,8 @@ pub mod database {
         }
         fn insert_table(&mut self, name: String, fields: Vec<TableField>, namespace: &str) -> QueryResult {
             let full_table_name = Database::compose_table_name(namespace, &name);
-            let table = Table::new(full_table_name.as_str(), fields, namespace);
+            let mut table = Table::new(full_table_name.as_str(), fields, namespace);
+            table.insert_id_column();
             self.tables.push(table);
 
             self.table_indexes.insert(String::from(full_table_name), self.tindex);
