@@ -44,6 +44,18 @@ pub mod db4 {
             self.working_database_index = *dab_index;
         }
 
+        pub fn add_namespace(&mut self, s: Statement) -> QueryResult {
+            let nouns = s.get_nouns();
+
+            if nouns.len() < 1 {
+                println!("no id");
+                return QueryResult::FAILURE;
+            }
+            let namespace = s.verbs[0].replace("#n", "").replace("n#", "");
+            self.databases[0].add_namespace(namespace.as_str());
+            return QueryResult::SUCCESS;
+        }
+
         fn create_table(&mut self, s: Statement) -> QueryResult {
             let nouns = s.get_nouns();
             let mut dbname = String::new();
@@ -160,6 +172,11 @@ pub mod db4 {
                     // self.create_table(s);
                     return Some(self.create_database(s.get_nouns()[0].as_str()));
                 }
+                StatementCategory::DDLStatement(DDLStatementTypes::CreateNamespace) => {
+                    // self.create_table(s);
+                    return Some(self.add_namespace(s));
+                }
+
                 _ => {}
             }
 
@@ -256,7 +273,7 @@ pub mod db4 {
         let mut db4 = Database4::new();
         db4.init_some();
 
-        let mut line = String::new();        
+        let mut line = String::new();
 
         loop {
             println!("HTLK > ");
