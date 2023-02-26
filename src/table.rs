@@ -11,13 +11,21 @@ pub mod table {
     }
 
     impl TableField {
-        pub fn new(name: &str, ftype: &str) -> TableField {
-            let tf_type = FieldTypes::from(ftype);
-
-            return TableField {
-                name: String::from(name),
-                tf_type,
-            };
+        pub fn new(name: &str, ftype: &str) -> Option<TableField> {
+            if name == "" {
+                return None;
+            }
+            if let Some(tf_type) = FieldTypes::from(ftype) {
+                return Some(TableField {
+                    name: String::from(name),
+                    tf_type,
+                });
+            } else {
+                return None;
+            }
+        }
+        pub fn new2(name: String, tf_type: FieldTypes) -> TableField {
+            return TableField { name, tf_type };
         }
 
         pub fn name(&self) -> String {
@@ -36,9 +44,19 @@ pub mod table {
             };
             self.tf_type = tf;
         }
+        pub fn to_string(&self) -> String {
+            return match &self.tf_type {
+                FieldTypes::Number(v) => v.to_string(),
+                FieldTypes::Integer(v) => v.to_string(),
+                FieldTypes::SignedInteger(v) => v.to_string(),
+                FieldTypes::Varchar(v) => v.get(),
+                FieldTypes::Fxchar(v) => v.get(),
+                FieldTypes::Date(v) => v.to_string(),
+            };
+        }
 
-        pub fn compare(t: TableField, t2: TableField) -> bool {
-            return true;
+        pub fn equal(t: TableField, t2: TableField) -> bool {
+            return t.typef() == t2.typef();
         }
         pub fn typef(&self) -> FieldTypes {
             return self.tf_type.clone();
@@ -99,20 +117,6 @@ pub mod table {
     }
 
     impl Record {
-        fn dummy() -> Record {
-            let tname = String::from("Pencils");
-            let field1 = TableField::new("brand", "vchar");
-            let mut fields: Vec<TableField> = Vec::new();
-            fields.push(field1);
-            return Record {
-                table: tname,
-                fields,
-                d: false,
-            };
-        }
-        // pub fn new(fields: Vec<TableField>, values: Vec<String>) -> Record {
-        //     return Record::dummy();
-        // }
         pub fn new(fields: Vec<TableField>, table: String) -> Record {
             return Record { table, fields, d: false };
         }
@@ -154,29 +158,160 @@ pub mod table {
             };
         }
     }
+    #[derive(Clone, PartialEq)]
+    pub enum ConstraintTypes {
+        ColumnMatch,
+        PrimaryKey,
+        ForeignKey,
+        Unique,
+        NoConstraint,
+    }
+    impl ConstraintTypes {
+        pub fn from(ctype: &str) -> ConstraintTypes {
+            return match ctype {
+                "=m>" => ConstraintTypes::ColumnMatch,
+                "=p>" => ConstraintTypes::PrimaryKey,
+                "=f>" | "=fk>" => ConstraintTypes::ForeignKey,
+                "=u>" => ConstraintTypes::Unique,
+                "==>" => ConstraintTypes::NoConstraint,
+                _ => ConstraintTypes::NoConstraint,
+            };
+        }
+        pub fn to(ct: &ConstraintTypes) -> String {
+            return match ct {
+                ConstraintTypes::ColumnMatch => String::from("=m>"),
+                ConstraintTypes::PrimaryKey => String::from("=p>"),
+                ConstraintTypes::ForeignKey => String::from("=f>"),
+                ConstraintTypes::Unique => String::from("=u>"),
+                ConstraintTypes::NoConstraint => String::from("==>"),
+            };
+        }
+        pub fn describe(ct: &ConstraintTypes) -> String {
+            return match ct {
+                ConstraintTypes::ColumnMatch => String::from("Column Match"),
+                ConstraintTypes::PrimaryKey => String::from("Primary Key"),
+                ConstraintTypes::ForeignKey => String::from("Foreign Key"),
+                ConstraintTypes::Unique => String::from("Unique"),
+                ConstraintTypes::NoConstraint => String::from("NoConstraint"),
+            };
+        }
+    }
+    #[derive(Clone)]
+    pub struct Constraint {
+        ctype: ConstraintTypes,
+        column: String,
+        pub ref_table: String,
+        pub ref_column: String,
+    }
+    impl Constraint {
+        pub fn new(ct: &str, col: &str, reft: &str, refcol: &str) -> Constraint {
+            let ctype = ConstraintTypes::from(ct);
+            let column = String::from(col);
+            let ref_table = String::from(reft);
+            let ref_column = String::from(refcol);
+            return Constraint {
+                ctype,
+                column,
+                ref_table,
+                ref_column,
+            };
+        }
+        pub fn col(&self) -> String {
+            return self.column.clone();
+        }
+        pub fn from_token(col: &str, token: &str) -> Option<Constraint> {
+            let mut pat = "";
 
+            if token.contains("=u>") {
+                pat = "=u>";
+            }
+
+            if token.contains("=p>") {
+                pat = "=p>";
+            }
+
+            if token.contains("=p>") || token.contains("=u>") {
+                let ctype = ConstraintTypes::from(pat);
+                return Some(Constraint {
+                    ctype,
+                    column: String::from(col),
+                    ref_table: String::new(),
+                    ref_column: String::new(),
+                });
+            } else {
+                if token.contains("=m>") {
+                    pat = "=m>";
+                }
+
+                if token.contains("=f>") {
+                    pat = "=f>";
+                }
+
+                if token.contains("=fk>") {
+                    pat = "=fk>";
+                }
+                if pat.len() > 0 {
+                    let column = String::from(col);
+                    let split: Vec<String> = token.trim().replace(pat, "").split(".").map(|e| String::from(e)).collect();
+                    if split.len() != 2 {
+                        println!("bad reference");
+                        return None;
+                    }
+                    let ref_table = split[0].clone();
+                    let ref_column = split[1].clone();
+                    let ctype = ConstraintTypes::from(pat);
+
+                    return Some(Constraint {
+                        ctype,
+                        column,
+                        ref_table,
+                        ref_column,
+                    });
+                }
+                return None;
+            }
+        }
+
+        pub fn ct(&self) -> ConstraintTypes {
+            return self.ctype.clone();
+        }
+    }
     pub struct Table {
         name: String,
         fields: Vec<TableField>,
-        namespace: String,
         records: Vec<Record>,
-        ridCounter: u64,
+        rid_counter: u64,
+        // depends on tables
+        // tables which depend on it
+        constraints: Vec<Constraint>,
+        relatives: Vec<String>,
     }
     impl Table {
-        pub fn new(name: &str, fields: Vec<TableField>, namespace: &str) -> Table {
+        pub fn new(name: &str, fields: Vec<TableField>, constraints: Vec<Constraint>) -> Table {
             let records: Vec<Record> = Vec::new();
+            let relatives: Vec<String> = Vec::new();
             return Table {
                 name: String::from(name),
                 fields,
-                namespace: String::from(namespace),
                 records,
-                ridCounter: 0,
+                rid_counter: 0,
+                constraints,
+                relatives,
             };
         }
         pub fn insert_id_column(&mut self) {
-            let id = TableField::new("id", "int");
-            self.fields.push(id);
+            if let Some(id) = TableField::new("id", "int") {
+                self.fields.push(id);
+            }
         }
+        pub fn add_constraint(&mut self) {}
+        pub fn remove_constraint(&mut self) {}
+
+        pub fn add_relative(&mut self, s: String) {
+            self.relatives.push(s);
+        }
+
+        fn set_primary_key(&mut self) {}
         pub fn tname(&self) -> String {
             return self.name.clone();
         }
@@ -184,10 +319,22 @@ pub mod table {
             return self.fields.clone();
         }
         pub fn get_recordid_counter(&self) -> u64 {
-            return self.ridCounter;
+            return self.rid_counter;
         }
         pub fn increment_recordid(&mut self) {
-            return self.ridCounter += 1;
+            return self.rid_counter += 1;
+        }
+        pub fn info(&self) -> QueryResult {
+            for f in &self.fields {
+                println!("{}-{}", f.name(), FieldTypes::describe(f.typef()));
+            }
+            for c in &self.constraints {
+                println!("{}-{}", &c.col(), ConstraintTypes::describe(&c.ct()));
+            }
+            for r in &self.relatives {
+                println!("relative:{}", &r);
+            }
+            return QueryResult::SUCCESS;
         }
 
         pub fn insert(&mut self, s: Statement) -> QueryResult {
@@ -200,12 +347,33 @@ pub mod table {
             // return QueryResult::SUCCESS;
             let mut fields = self.get_fields();
             if values.len() != fields.len() {
+                println!("value length not matching");
                 return QueryResult::FAILURE;
             }
             self.increment_recordid();
 
             let len = values.len();
             for i in 0..len {
+                if self.constraints.len() > 0 {
+                    for c in &self.constraints {
+                        if c.col() == fields[i].name() {
+                            match c.ct() {
+                                ConstraintTypes::Unique => {
+                                    //check for unique constraint
+                                    for r in &self.records {
+                                        if let Some(field) = r.get(c.col()) {
+                                            if field.to_string() == values[i] {
+                                                println!("unique constraint violated");
+                                                return QueryResult::FAILURE;
+                                            }
+                                        }
+                                    }
+                                }
+                                _ => {}
+                            }
+                        }
+                    }
+                }
                 fields[i].set(&values[i]);
             }
 

@@ -76,9 +76,44 @@ pub mod db4 {
             }
 
             return self.databases[dab_index as usize].create_table(s, namespace.as_str());
-        }
+        }        
 
-        fn table_info(&mut self) {}
+        fn table_info(&self, s: Statement)-> QueryResult {
+            let nouns = s.get_nouns();
+            let mut dbname = String::new();
+            let mut namespace = String::new();
+            let mut tablename = String::new();
+            let mut tablename_full = String::new();
+            let mut dab_index: u64 = 0;
+            if nouns.len() > 2 {
+                dbname = nouns[0].clone();
+                namespace = nouns[1].clone();
+                tablename = nouns[2].clone();
+
+                if let Some(db_index) = self.database_indexes.get(&dbname) {
+                    tablename_full = Database::compose_table_name(&namespace, &tablename);
+                    dab_index = *db_index;
+                } else {
+                    println!("no database were found with such name");
+                    return QueryResult::FAILURE;
+                };
+                // drop(nouns);
+            } else if nouns.len() > 1 {
+                namespace = nouns[0].clone();
+                tablename = nouns[1].clone();
+                dab_index = self.working_database_index;
+
+                tablename_full = Database::compose_table_name(&namespace, &tablename);
+            } else {
+                tablename = nouns[0].clone();
+                dab_index = self.working_database_index;
+                namespace = self.databases[dab_index as usize].get_namespace();
+
+                tablename_full = Database::compose_table_name(&namespace, &tablename);
+            }
+
+            return self.databases[dab_index as usize].table_info(tablename_full);
+        }
 
         fn alter_table(&mut self) {}
 
@@ -167,6 +202,9 @@ pub mod db4 {
             match s.sttype() {
                 StatementCategory::DDLStatement(DDLStatementTypes::CreateTable) => {
                     return Some(self.create_table(s));
+                }
+                StatementCategory::DDLStatement(DDLStatementTypes::InfoTable) => {
+                    return Some(self.table_info(s));
                 }
                 StatementCategory::DDLStatement(DDLStatementTypes::CreateDatabase) => {
                     // self.create_table(s);
@@ -264,7 +302,7 @@ pub mod db4 {
             self.databases[0].add_namespace("sys");
             self.databases[0].add_namespace("info");
             self.databases[0].insert_info_table();
-        }
+        }        
     }
 
     // main here

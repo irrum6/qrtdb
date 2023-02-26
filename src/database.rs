@@ -2,7 +2,7 @@ pub mod database {
     use std::collections::HashMap;
     // use std::ops::Index;
     use crate::{
-        qrtlib::{QueryResult, Table, TableField},
+        qrtlib::{Constraint, ConstraintTypes, FieldTypes, QueryResult, Table, TableField, Varchar},
         statements::statements::Statement,
     };
 
@@ -55,19 +55,23 @@ pub mod database {
             return self.namespace.clone();
         }
         pub fn insert_info_table(&mut self) -> QueryResult {
-            let date = TableField::new("date", "vchar");
-            let vmajor = TableField::new("version_major", "int");
-            let vminor = TableField::new("version_minor", "int");
-            let vpatch = TableField::new("version_patch", "int");
-            let vname = TableField::new("version_name", "vchar");
+            let date = TableField::new2(String::from("date"), FieldTypes::Date(0));
+            let vmajor = TableField::new2(String::from("version_major"), FieldTypes::Integer(0));
+            let vminor = TableField::new2(String::from("version_minor"), FieldTypes::Integer(0));
+            let vpatch = TableField::new2(String::from("version_patch"), FieldTypes::Integer(0));
+            let vname = TableField::new2(
+                String::from("version_name"),
+                FieldTypes::Varchar(Varchar::new(24, String::new())),
+            );
             let fields = vec![date, vmajor, vminor, vpatch, vname];
+            let cst: Vec<Constraint> = Vec::new();
 
             let info = String::from("info");
             if !self.namespaces.contains(&info) {
                 self.namespaces.push(info);
             }
 
-            return self.insert_table(String::from("infotable"), fields, "info");
+            return self.insert_table(String::from("infotable"), fields, cst, "info");
         }
 
         pub fn compose_table_name(namespace: &str, name: &str) -> String {
@@ -83,31 +87,113 @@ pub mod database {
                 return QueryResult::FAILURE;
             }
             let create_text = s.verbs[0].clone();
-            let fields = create_text
+            let replaced = create_text
                 .trim()
                 .replace("#T", "")
                 .replace("T#", "")
                 .replace("#t", "")
                 .replace("t#", "");
-            let fields: Vec<String> = fields.split(",").map(|e| String::from(e)).collect();
 
-            let name = fields[0].clone();
+            // name|fields
+
+            let split: Vec<String> = replaced.split("|").map(|e| String::from(e)).collect();
+            let name = split[0].clone();
+            let fields: Vec<String> = split[1].split(",").map(|e| String::from(e)).collect();
+
             let len = fields.len();
 
             let mut tablefields: Vec<TableField> = Vec::new();
-            for ix in 1..len {
+            let mut cst: Vec<Constraint> = Vec::new();
+            for ix in 0..len {
                 let split: Vec<&str> = fields[ix].split(":").collect();
-                if split.len() != 2 {
+                if split.len() < 2 || split.len() > 3 {
                     continue;
                 }
-                let tf = TableField::new(split[0], split[1]);
+                let name = split[0];
+                if name == "" {
+                    println!("empty name was provided for column");
+                    return QueryResult::FAILURE;
+                }
+                let ftype = split[1];
+
+                let fieldtypeus = FieldTypes::from(ftype);
+
+                if fieldtypeus.is_none() {
+                    println!("type not recognized");
+                    return QueryResult::FAILURE;
+                }
+
+                let fieldtypus = fieldtypeus.unwrap();
+
+                if split.len() == 3 {
+                    //third one is constraints
+                    if split[2].contains("=m>") && (split[2].contains("=fk>") || split[2].contains("=f>")) {
+                        println!("incompatible constraints");
+                        return QueryResult::FAILURE;
+                    }
+                    if split[2].contains("=u>") && split[2].contains("=p>") {
+                        println!("incompatible constraints");
+                        return QueryResult::FAILURE;
+                    }
+                    if split[2].contains("=p>") && (split[2].contains("=fk>") || split[2].contains("=f>")) {
+                        println!("primary key can't be foreign");
+                        return QueryResult::FAILURE;
+                    }
+
+                    let consplit: Vec<&str> = split[2].split("_").collect();
+                    for c in consplit {
+                        let css = Constraint::from_token(name, c.trim());
+                        if css.is_none() {
+                            println!("constraint not recognized");
+                            return QueryResult::FAILURE;
+                        }
+                        let cs = css.unwrap();
+                        match cs.ct() {
+                            // for column match and foreign keys check existence of the table referenced
+                            ConstraintTypes::ColumnMatch | ConstraintTypes::ForeignKey => {
+                                let tablename = cs.ref_table.clone().replace("@", "").replace("::", "_");
+                                let index = self.table_indexes.get(&tablename);
+
+                                if index.is_none() {
+                                    println!("table referenced is not found");
+                                    return QueryResult::FAILURE;
+                                }
+                                let table_index = index.unwrap();
+                                let fields = self.tables[*table_index as usize].get_fields();
+                                let mut found = false;
+                                for f in fields {
+                                    if &f.name() != &cs.col() {
+                                        continue;
+                                    }
+                                    found = true;
+                                    if FieldTypes::to(f.typef()) != ftype {
+                                        println!("Column referenced has different type");
+                                        return QueryResult::FAILURE;
+                                    }
+                                    break;
+                                }
+                                if found == false {
+                                    println!("Column referenced is not found");
+                                    return QueryResult::FAILURE;
+                                }
+                            }
+                            _ => {}
+                        }
+                        if cs.ct() != ConstraintTypes::NoConstraint {
+                            cst.push(cs);
+                        }
+                    }
+                }
+
+                let tf = TableField::new2(String::from(name), fieldtypus);
                 tablefields.push(tf);
             }
-            return self.insert_table(name, tablefields, &namespace);
+
+            return self.insert_table(name, tablefields, cst, &namespace);
         }
-        fn insert_table(&mut self, name: String, fields: Vec<TableField>, namespace: &str) -> QueryResult {
+        fn insert_table(&mut self, name: String, fields: Vec<TableField>, cst: Vec<Constraint>, namespace: &str) -> QueryResult {
             let full_table_name = Database::compose_table_name(namespace, &name);
-            let mut table = Table::new(full_table_name.as_str(), fields, namespace);
+            let mut table = Table::new(full_table_name.as_str(), fields, cst);
             table.insert_id_column();
             self.tables.push(table);
 
@@ -146,6 +232,14 @@ pub mod database {
                     println!("{}", t.tname());
                 }
             }
+        }
+        pub fn table_info(&self, tablename: String) -> QueryResult {
+            if let Some(table_index) = self.table_indexes.get(&tablename) {
+                return self.tables[*table_index as usize].info();
+            } else {
+                println!("no tables were found with such name");
+                return QueryResult::FAILURE;
+            };
         }
 
         pub fn insert(&mut self, tablename: String, s: Statement) -> QueryResult {
