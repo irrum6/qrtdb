@@ -1,6 +1,10 @@
 // use crate::field_types::field_types::FieldTypes;
 pub mod db4 {
-    use std::collections::HashMap;
+    use std::{
+        collections::HashMap,
+        fs::File,
+        io::{self, Read},
+    };
 
     use crate::{
         qrtlib::{DDLStatementTypes, DMLStatementTypes, Database, MetaCommands, PrepareResult, QueryResult, Table, TableField},
@@ -76,9 +80,9 @@ pub mod db4 {
             }
 
             return self.databases[dab_index as usize].create_table(s, namespace.as_str());
-        }        
+        }
 
-        fn table_info(&self, s: Statement)-> QueryResult {
+        fn table_info(&self, s: Statement) -> QueryResult {
             let nouns = s.get_nouns();
             let mut dbname = String::new();
             let mut namespace = String::new();
@@ -296,13 +300,24 @@ pub mod db4 {
             return;
         }
 
+        pub fn read_and_execute(&mut self, s: &String) -> Result<String, io::Error> {
+            let x: Vec<&str> = s.trim().split(" ").collect();
+
+            if x.len() > 1 && x[1] != "" {
+                let mut line = String::new();
+                File::open(x[1])?.read_to_string(&mut line)?;
+                self.process_statement(&line);
+            }
+
+            return Ok(String::from("success"));
+        }
         pub fn init_some(&mut self) {
             self.create_database("sys");
 
             self.databases[0].add_namespace("sys");
             self.databases[0].add_namespace("info");
             self.databases[0].insert_info_table();
-        }        
+        }
     }
 
     // main here
@@ -323,6 +338,12 @@ pub mod db4 {
                     MetaCommands::EXIT => return,
                     MetaCommands::HELP => Database4::help(),
                     MetaCommands::TABLES => db4.ls(&line),
+                    MetaCommands::ReadAndExecute => {
+                        let result = db4.read_and_execute(&line);
+                        if result.is_err() {
+                            println!("error occured executings script file");
+                        }
+                    }
                     MetaCommands::UnrecognizedCommand => {
                         println!("Unrecognized meta command")
                     }

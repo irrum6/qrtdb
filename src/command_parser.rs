@@ -3,6 +3,7 @@ pub mod command_parser {
         EXIT,
         TABLES,
         HELP,
+        ReadAndExecute,
         UnrecognizedCommand,
     }
     impl MetaCommands {
@@ -12,6 +13,7 @@ pub mod command_parser {
                 ".exit" | ".EXIT" | ".X" | ".x" => MetaCommands::EXIT,
                 ".help" | ".HELP" | ".H" | ".h" => MetaCommands::HELP,
                 ".tables" | ".TABLES" | ".T" | ".t" | ".ls" => MetaCommands::TABLES,
+                ".rex" | ".REX" | ".RX" | ".rx" => MetaCommands::ReadAndExecute,
                 //ls databases
                 //in base
                 //ls namespacs
