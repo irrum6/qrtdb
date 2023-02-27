@@ -87,15 +87,10 @@ pub mod database {
                 return QueryResult::FAILURE;
             }
             let create_text = s.verbs[0].clone();
-            let replaced = create_text
-                .trim()
-                .replace("#T", "")
-                .replace("T#", "")
-                .replace("#t", "")
-                .replace("t#", "");
+            let replaced = create_text.trim().replace("#T", "").replace("T#", "");
+            let replaced = replaced.replace("#t", "").replace("t#", "");
 
             // name|fields
-
             let split: Vec<String> = replaced.split("|").map(|e| String::from(e)).collect();
             let name = split[0].clone();
             let fields: Vec<String> = split[1].split(",").map(|e| String::from(e)).collect();

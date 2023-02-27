@@ -10,4 +10,5 @@ notes
 
 test*
 
-sample.svepql
+*.svepql
+*.svep

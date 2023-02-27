@@ -311,7 +311,7 @@ pub mod table {
             self.relatives.push(s);
         }
 
-        fn set_primary_key(&mut self) {}
+        fn auto_primary_key(&mut self) {}
         pub fn tname(&self) -> String {
             return self.name.clone();
         }
@@ -337,6 +337,32 @@ pub mod table {
             return QueryResult::SUCCESS;
         }
 
+        fn validate_constraints_on_insert(&mut self, name: String, value: String) -> bool {
+            if self.constraints.len() == 0 {
+                return true;
+            }
+            for c in &self.constraints {
+                if c.col() != name {
+                    continue;
+                }
+                match c.ct() {
+                    ConstraintTypes::Unique => {
+                        //check for unique constraint
+                        for r in &self.records {
+                            if let Some(field) = r.get(c.col()) {
+                                if field.to_string() == value {
+                                    println!("unique constraint violated");
+                                    return false;
+                                }
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            return true;
+        }
+
         pub fn insert(&mut self, s: Statement) -> QueryResult {
             let inserttext = s.verbs[0].clone();
             let binding = inserttext.replace("#", "");
@@ -354,25 +380,9 @@ pub mod table {
 
             let len = values.len();
             for i in 0..len {
-                if self.constraints.len() > 0 {
-                    for c in &self.constraints {
-                        if c.col() == fields[i].name() {
-                            match c.ct() {
-                                ConstraintTypes::Unique => {
-                                    //check for unique constraint
-                                    for r in &self.records {
-                                        if let Some(field) = r.get(c.col()) {
-                                            if field.to_string() == values[i] {
-                                                println!("unique constraint violated");
-                                                return QueryResult::FAILURE;
-                                            }
-                                        }
-                                    }
-                                }
-                                _ => {}
-                            }
-                        }
-                    }
+                let valid = self.validate_constraints_on_insert(fields[i].name(), values[i].clone());
+                if !valid {
+                    return QueryResult::FAILURE;
                 }
                 fields[i].set(&values[i]);
             }
