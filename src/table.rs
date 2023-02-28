@@ -1,6 +1,6 @@
 pub mod table {
     use crate::{
-        qrtlib::{FieldTypes, Fixedchar, QueryResult, Varchar},
+        qrtlib::{Database, FieldTypes, Fixedchar, QueryResult, Varchar},
         statements::statements::Statement,
     };
 
@@ -290,7 +290,7 @@ pub mod table {
         pub fn new(name: &str, fields: Vec<TableField>, constraints: Vec<Constraint>) -> Table {
             let records: Vec<Record> = Vec::new();
             let relatives: Vec<String> = Vec::new();
-            return Table {
+            let mut table = Table {
                 name: String::from(name),
                 fields,
                 records,
@@ -298,12 +298,98 @@ pub mod table {
                 constraints,
                 relatives,
             };
+            // table.insert_id_column();
+            return table;
         }
-        pub fn insert_id_column(&mut self) {
-            if let Some(id) = TableField::new("id", "int") {
-                self.fields.push(id);
+        pub fn build_from_statement(create_text: String, namespace: &str, db: &Database) -> Option<Table> {
+            // Table
+            let replaced = create_text.trim().replace("#T", "").replace("T#", "");
+            let replaced = replaced.replace("#t", "").replace("t#", "");
+
+            // name|fields
+            let split: Vec<String> = replaced.split("|").map(|e| String::from(e)).collect();
+            let name = split[0].clone();
+            let fields: Vec<String> = split[1].split(",").map(|e| String::from(e)).collect();
+
+            let len = fields.len();
+
+            let mut tablefields: Vec<TableField> = Vec::new();
+            let mut cst: Vec<Constraint> = Vec::new();
+            for ix in 0..len {
+                let split: Vec<&str> = fields[ix].split(":").collect();
+                if split.len() < 2 || split.len() > 3 {
+                    continue;
+                }
+                let name = split[0];
+                if name == "" {
+                    println!("empty name was provided for column");
+                    return None;
+                }
+                let ftype = split[1];
+
+                let fieldtypeus = FieldTypes::from(ftype);
+
+                if fieldtypeus.is_none() {
+                    println!("type not recognized");
+                    return None;
+                }
+
+                let fieldtypus = fieldtypeus.unwrap();
+
+                if split.len() == 3 {
+                    //third one is constraints
+                    if split[2].contains("=m>") && (split[2].contains("=fk>") || split[2].contains("=f>")) {
+                        println!("incompatible constraints");
+                        return None;
+                    }
+                    if split[2].contains("=u>") && split[2].contains("=p>") {
+                        println!("incompatible constraints");
+                        return None;
+                    }
+                    if split[2].contains("=p>") && (split[2].contains("=fk>") || split[2].contains("=f>")) {
+                        println!("primary key can't be foreign");
+                        return None;
+                    }
+
+                    let consplit: Vec<&str> = split[2].split("_").collect();
+                    for c in consplit {
+                        let css = Constraint::from_token(name, c.trim());
+                        if css.is_none() {
+                            println!("constraint not recognized");
+                            return None;
+                        }
+                        let cs = css.unwrap();
+                        match cs.ct() {
+                            // for column match and foreign keys check existence of the table referenced
+                            ConstraintTypes::ColumnMatch | ConstraintTypes::ForeignKey => {
+                                let valid = db.check_column_referenced(&cs, String::from(ftype));
+                                if !valid {
+                                    return None;
+                                }
+                            }
+                            _ => {}
+                        }
+                        if cs.ct() != ConstraintTypes::NoConstraint {
+                            cst.push(cs);
+                        }
+                    }
+                }
+
+                let tf = TableField::new2(String::from(name), fieldtypus);
+                tablefields.push(tf);
             }
+
+            let full_table_name = Database::compose_table_name(namespace, &name);
+            let mut table = Table::new(full_table_name.as_str(), tablefields, cst);
+            if let Some(id) = TableField::new("id", "int") {
+                table.fields.push(id);
+            } else {
+                println!("could not insert auto id column");
+                return None;
+            }
+            return Some(table);
         }
+
         pub fn add_constraint(&mut self) {}
         pub fn remove_constraint(&mut self) {}
 
@@ -311,7 +397,9 @@ pub mod table {
             self.relatives.push(s);
         }
 
-        fn auto_primary_key(&mut self) {}
+        fn auto_primary_key(&mut self) -> bool {
+            return true;
+        }
         pub fn tname(&self) -> String {
             return self.name.clone();
         }

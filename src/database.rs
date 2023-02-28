@@ -43,7 +43,11 @@ pub mod database {
         }
         pub fn remove_namespace(&mut self, name: &str) {
             let namespace = String::from(name);
-        }
+            if !self.namespaces.contains(&namespace) {
+                return;
+            }
+            self.namespaces.retain(|ns| ns != &namespace);
+        }        
 
         pub fn set_namespace(&mut self, name: &str) {
             if !self.namespaces.contains(&String::from(name)) {
@@ -80,6 +84,35 @@ pub mod database {
             tname.push_str(name);
             return tname;
         }
+        pub fn check_column_referenced(&self, cs: &Constraint, ftype: String) -> bool {
+            let tablename = cs.ref_table.clone().replace("@", "").replace("::", "_");
+            let index = self.table_indexes.get(&tablename);
+
+            if index.is_none() {
+                println!("table referenced is not found");
+                return false;
+            }
+            let table_index = index.unwrap();
+            let fields = self.tables[*table_index as usize].get_fields();
+            let mut found = false;
+            for f in fields {
+                if &f.name() != &cs.col() {
+                    continue;
+                }
+                found = true;
+                if FieldTypes::to(f.typef()) != ftype {
+                    println!("Column referenced has different type");
+                    return false;
+                }
+                break;
+            }
+            if found == false {
+                println!("Column referenced is not found");
+                return false;
+            }
+            let exists = true;
+            return exists;
+        }
         pub fn create_table(&mut self, s: Statement, namespace: &str) -> QueryResult {
             //process statements
             if !self.namespaces.contains(&String::from(namespace)) {
@@ -87,109 +120,19 @@ pub mod database {
                 return QueryResult::FAILURE;
             }
             let create_text = s.verbs[0].clone();
-            let replaced = create_text.trim().replace("#T", "").replace("T#", "");
-            let replaced = replaced.replace("#t", "").replace("t#", "");
 
-            // name|fields
-            let split: Vec<String> = replaced.split("|").map(|e| String::from(e)).collect();
-            let name = split[0].clone();
-            let fields: Vec<String> = split[1].split(",").map(|e| String::from(e)).collect();
-
-            let len = fields.len();
-
-            let mut tablefields: Vec<TableField> = Vec::new();
-            let mut cst: Vec<Constraint> = Vec::new();
-            for ix in 0..len {
-                let split: Vec<&str> = fields[ix].split(":").collect();
-                if split.len() < 2 || split.len() > 3 {
-                    continue;
-                }
-                let name = split[0];
-                if name == "" {
-                    println!("empty name was provided for column");
-                    return QueryResult::FAILURE;
-                }
-                let ftype = split[1];
-
-                let fieldtypeus = FieldTypes::from(ftype);
-
-                if fieldtypeus.is_none() {
-                    println!("type not recognized");
-                    return QueryResult::FAILURE;
-                }
-
-                let fieldtypus = fieldtypeus.unwrap();
-
-                if split.len() == 3 {
-                    //third one is constraints
-                    if split[2].contains("=m>") && (split[2].contains("=fk>") || split[2].contains("=f>")) {
-                        println!("incompatible constraints");
-                        return QueryResult::FAILURE;
-                    }
-                    if split[2].contains("=u>") && split[2].contains("=p>") {
-                        println!("incompatible constraints");
-                        return QueryResult::FAILURE;
-                    }
-                    if split[2].contains("=p>") && (split[2].contains("=fk>") || split[2].contains("=f>")) {
-                        println!("primary key can't be foreign");
-                        return QueryResult::FAILURE;
-                    }
-
-                    let consplit: Vec<&str> = split[2].split("_").collect();
-                    for c in consplit {
-                        let css = Constraint::from_token(name, c.trim());
-                        if css.is_none() {
-                            println!("constraint not recognized");
-                            return QueryResult::FAILURE;
-                        }
-                        let cs = css.unwrap();
-                        match cs.ct() {
-                            // for column match and foreign keys check existence of the table referenced
-                            ConstraintTypes::ColumnMatch | ConstraintTypes::ForeignKey => {
-                                let tablename = cs.ref_table.clone().replace("@", "").replace("::", "_");
-                                let index = self.table_indexes.get(&tablename);
-
-                                if index.is_none() {
-                                    println!("table referenced is not found");
-                                    return QueryResult::FAILURE;
-                                }
-                                let table_index = index.unwrap();
-                                let fields = self.tables[*table_index as usize].get_fields();
-                                let mut found = false;
-                                for f in fields {
-                                    if &f.name() != &cs.col() {
-                                        continue;
-                                    }
-                                    found = true;
-                                    if FieldTypes::to(f.typef()) != ftype {
-                                        println!("Column referenced has different type");
-                                        return QueryResult::FAILURE;
-                                    }
-                                    break;
-                                }
-                                if found == false {
-                                    println!("Column referenced is not found");
-                                    return QueryResult::FAILURE;
-                                }
-                            }
-                            _ => {}
-                        }
-                        if cs.ct() != ConstraintTypes::NoConstraint {
-                            cst.push(cs);
-                        }
-                    }
-                }
-
-                let tf = TableField::new2(String::from(name), fieldtypus);
-                tablefields.push(tf);
+            if let Some(table) = Table::build_from_statement(create_text, namespace, &self) {
+                self.table_indexes.insert(table.tname(), self.tindex);
+                self.tables.push(table);
+                self.tindex += 1;
+                return QueryResult::SUCCESS;
             }
-
-            return self.insert_table(name, tablefields, cst, &namespace);
+            return QueryResult::FAILURE;
         }
         fn insert_table(&mut self, name: String, fields: Vec<TableField>, cst: Vec<Constraint>, namespace: &str) -> QueryResult {
             let full_table_name = Database::compose_table_name(namespace, &name);
-            let mut table = Table::new(full_table_name.as_str(), fields, cst);
-            table.insert_id_column();
+            let table = Table::new(full_table_name.as_str(), fields, cst);
+            
             self.tables.push(table);
 
             self.table_indexes.insert(String::from(full_table_name), self.tindex);
