@@ -2,7 +2,7 @@ pub mod database {
     use std::collections::HashMap;
     // use std::ops::Index;
     use crate::{
-        qrtlib::{Constraint, ConstraintTypes, FieldTypes, QueryResult, Table, TableField, Varchar},
+        qrtlib::{Constraint,FieldTypes, QueryResult, Table, TableField, Varchar},
         statements::statements::Statement,
     };
 
@@ -59,6 +59,7 @@ pub mod database {
             return self.namespace.clone();
         }
         pub fn insert_info_table(&mut self) -> QueryResult {
+            
             let date = TableField::new2(String::from("date"), FieldTypes::Date(0));
             let vmajor = TableField::new2(String::from("version_major"), FieldTypes::Integer(0));
             let vminor = TableField::new2(String::from("version_minor"), FieldTypes::Integer(0));

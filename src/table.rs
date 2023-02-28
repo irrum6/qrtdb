@@ -290,7 +290,7 @@ pub mod table {
         pub fn new(name: &str, fields: Vec<TableField>, constraints: Vec<Constraint>) -> Table {
             let records: Vec<Record> = Vec::new();
             let relatives: Vec<String> = Vec::new();
-            let mut table = Table {
+            let table = Table {
                 name: String::from(name),
                 fields,
                 records,
@@ -298,7 +298,6 @@ pub mod table {
                 constraints,
                 relatives,
             };
-            // table.insert_id_column();
             return table;
         }
         pub fn build_from_statement(create_text: String, namespace: &str, db: &Database) -> Option<Table> {
@@ -326,15 +325,10 @@ pub mod table {
                     return None;
                 }
                 let ftype = split[1];
-
-                let fieldtypeus = FieldTypes::from(ftype);
-
-                if fieldtypeus.is_none() {
-                    println!("type not recognized");
+                if ftype == "" {
+                    println!("columntype can not be described by empty string");
                     return None;
                 }
-
-                let fieldtypus = fieldtypeus.unwrap();
 
                 if split.len() == 3 {
                     //third one is constraints
@@ -375,18 +369,21 @@ pub mod table {
                     }
                 }
 
-                let tf = TableField::new2(String::from(name), fieldtypus);
-                tablefields.push(tf);
+                if let Some(tf) = TableField::new(name, ftype) {
+                    tablefields.push(tf);
+                } else {
+                    return None;
+                }
             }
 
-            let full_table_name = Database::compose_table_name(namespace, &name);
-            let mut table = Table::new(full_table_name.as_str(), tablefields, cst);
             if let Some(id) = TableField::new("id", "int") {
-                table.fields.push(id);
+                tablefields.push(id);
             } else {
                 println!("could not insert auto id column");
                 return None;
             }
+            let full_table_name = Database::compose_table_name(namespace, &name);
+            let table = Table::new(full_table_name.as_str(), tablefields, cst);
             return Some(table);
         }
 
