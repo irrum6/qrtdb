@@ -1,5 +1,8 @@
 pub mod statements {
-    use crate::{qrtlib::{FieldTypes}, table::table::{RecordValueTypes, RecordValue}};
+    use crate::{
+        qrtlib::FieldTypes,
+        table::table::{RecordValue, RecordValueTypes},
+    };
     #[derive(Clone, PartialEq)]
     pub enum DDLStatementTypes {
         CreateDatabase,
@@ -35,20 +38,22 @@ pub mod statements {
             if String::from(start) != end.chars().rev().collect::<String>() {
                 return DDLStatementTypes::NONVALID;
             }
+            let mut startend: String = start.to_owned();
+            startend.push_str(end);
 
-            return match start {
-                "#d" => DDLStatementTypes::CreateDatabase,
-                "$d" => DDLStatementTypes::InfoDatabase,
-                "*d" => DDLStatementTypes::AlterDatabase,
-                "!d" => DDLStatementTypes::DropDatabase,
-                "#t" => DDLStatementTypes::CreateTable,
-                "$t" => DDLStatementTypes::InfoTable,
-                "*t" => DDLStatementTypes::AlterTable,
-                "!t" => DDLStatementTypes::DropTable,
-                "#n" => DDLStatementTypes::CreateNamespace,
-                "$n" => DDLStatementTypes::InfoNamespace,
-                "*n" => DDLStatementTypes::AlterNamespace,
-                "!n" => DDLStatementTypes::DropNamespace,
+            return match startend.as_str() {
+                "#dd#" => DDLStatementTypes::CreateDatabase,
+                "$dd$" => DDLStatementTypes::InfoDatabase,
+                "*dd*" => DDLStatementTypes::AlterDatabase,
+                "!dd!" => DDLStatementTypes::DropDatabase,
+                "#tt#" => DDLStatementTypes::CreateTable,
+                "$tt$" => DDLStatementTypes::InfoTable,
+                "*tt*" => DDLStatementTypes::AlterTable,
+                "!tt!" => DDLStatementTypes::DropTable,
+                "#nn#" => DDLStatementTypes::CreateNamespace,
+                "$nn$" => DDLStatementTypes::InfoNamespace,
+                "*nn*" => DDLStatementTypes::AlterNamespace,
+                "!nn!" => DDLStatementTypes::DropNamespace,
                 _ => DDLStatementTypes::NONVALID,
             };
         }
@@ -170,7 +175,7 @@ pub mod statements {
             // }
 
             return match rev.get_referenced() {
-                RecordValueTypes::Value(FieldTypes::Number(v))                 => {
+                RecordValueTypes::Value(FieldTypes::Number(v)) => {
                     let x: f64 = self.value.parse().unwrap();
                     return WhereClauses::number_cmp(&self.clause, *v, x);
                 }
@@ -188,7 +193,7 @@ pub mod statements {
                     let x: u64 = self.value.parse().unwrap();
                     return WhereClauses::int_cmp(&self.clause, *v, x);
                 }
-                RecordValueTypes::NULL => false
+                RecordValueTypes::NULL => false,
             };
         }
 
@@ -288,12 +293,19 @@ pub mod statements {
         }
         pub fn prepare(&mut self) -> PrepareResult {
             let tokens: Vec<&str> = self.text.trim().split(" ").collect();
-            println!("{:?}", tokens);
+            // println!("{:?}", tokens);
 
             for token in tokens {
                 if token.len() == 0 {
                     continue;
                 }
+                let stcat = StatementCategory::from(token);
+                if stcat != StatementCategory::UNRECOGNIZED {
+                    self.verbs.push(String::from(token));
+                    self.st_type = stcat;
+                    continue;
+                }
+
                 if token.contains("@") {
                     // @noun
                     self.nouns = token.replace("@", "").split("::").map(|e| String::from(e)).collect();
@@ -303,15 +315,10 @@ pub mod statements {
                     self.criteria = Criteria::en_masse(String::from(token));
                     continue;
                 }
-
-                self.st_type = StatementCategory::from(token);
-                if self.st_type != StatementCategory::UNRECOGNIZED {
-                    self.verbs.push(String::from(token));
-                }
             }
 
             if self.verbs.len() != 1 {
-                println!("only one verb");
+                println!("there should be only one verb");
                 if self.verbs.len() > 1 {
                     println!("more than one verb was provided");
                 }

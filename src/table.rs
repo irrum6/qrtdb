@@ -36,6 +36,9 @@ pub mod table {
                 return None;
             }
         }
+        pub fn data_type_ref(&self) -> &FieldTypes {
+            return &self.data_type;
+        }
 
         pub fn set_nullable(&mut self, v: bool) {
             self.nullable = v;
@@ -72,7 +75,7 @@ pub mod table {
         pub(super) value: RecordValueTypes,
     }
     impl RecordValue {
-        pub(super) fn new(value: RecordValueTypes) -> RecordValue {
+        pub fn new(value: RecordValueTypes) -> RecordValue {
             return RecordValue { value };
         }
         pub fn to_string(&self) -> String {
@@ -100,8 +103,8 @@ pub mod table {
             return None;
         }
     }
-    struct Record {
-        pub(super) fields: Vec<RecordValue>,
+    pub struct Record {
+        pub(crate) fields: Vec<RecordValue>,
     }
 
     impl Record {
@@ -209,6 +212,8 @@ pub mod table {
         }
 
         pub fn from_token(col: &str, token: &str) -> Option<Constraint> {
+            println!("{} {}", col, token);
+            
             let mut pat = "";
 
             if token.contains("=u>") {
@@ -311,6 +316,9 @@ pub mod table {
             }
             return None;
         }
+        pub fn get_column_name(&self, index: usize) -> String {
+            return self.head[index].clone();
+        }
         pub fn build_from_statement(create_text: String, namespace: &str, db: &Database) -> Option<Table> {
             // Table
             let replaced = create_text.trim().replace("#T", "").replace("T#", "");
@@ -334,7 +342,7 @@ pub mod table {
 
             let mut cst: Vec<Constraint> = Vec::new();
             for ix in 0..len {
-                let split: Vec<&str> = fields[ix].split(":").collect();
+                let split: Vec<&str> = fields[ix].split("->").collect();
                 if split.len() < 2 || split.len() > 3 {
                     continue;
                 }
@@ -412,12 +420,40 @@ pub mod table {
         pub fn add_relative(&mut self, s: String) {
             self.relatives.push(s);
         }
+        // fn compose_new_record
+
+        pub fn search_for_value(&self, name: String, value: String) -> bool {
+            let colindex = self.get_column_index(&name);
+            if colindex.is_none() {
+                println!("field not found, probably not Ok");
+                return false;
+            }
+            let colindex = colindex.unwrap();
+            for r in &self.records {
+                if let Some(field) = &r.get(colindex as usize) {
+                    if field.to_string() == value {
+                        println!("match constraint validated");
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
 
         pub fn tname(&self) -> String {
             return self.name.clone();
         }
         pub fn get_columns(&self) -> Vec<TableColumn> {
             return self.columns.clone();
+        }
+        pub fn get_columns_referenced(&self) -> &Vec<TableColumn> {
+            return &self.columns;
+        }
+        pub fn get_constraints_referenced(&self) -> &Vec<Constraint> {
+            return &self.constraints;
+        }
+        pub fn get_records_referenced(&self) -> &Vec<Record> {
+            return &self.records;
         }
         pub fn get_recordid_counter(&self) -> u64 {
             return self.rid_counter;
@@ -438,74 +474,11 @@ pub mod table {
             return QueryResult::SUCCESS;
         }
 
-        fn validate_constraints_on_insert(&mut self, name: String, value: String) -> bool {
-            if self.constraints.len() == 0 {
-                return true;
-            }
-
-            let colindex = self.get_column_index(&name);
-            if colindex.is_none() {
-                println!("field not found, probably Ok");
-                return true;
-            }
-            let colindex = colindex.unwrap();
-
-            for c in &self.constraints {
-                if c.col() != name {
-                    continue;
-                }
-                match c.ct() {
-                    ConstraintTypes::Unique | ConstraintTypes::PrimaryKey => {
-                        //check for unique constraint
-                        for r in &self.records {
-                            if let Some(field) = &r.get(colindex as usize) {
-                                if field.to_string() == value {
-                                    println!("unique constraint violated");
-                                    return false;
-                                }
-                            }
-                        }
-                    }
-                    _ => {}
-                }
-            }
-            return true;
-        }
-
-        pub fn insert(&mut self, s: Statement) -> QueryResult {
-            let inserttext = s.verbs[0].clone();
-            let binding = inserttext.replace("#", "");
-            let mut values: Vec<String> = binding.split(",").map(|e| e.to_string()).collect();
-            self.increment_recordid();
-            let rid = self.get_recordid_counter().to_string();
-            values.insert(0, rid);
-            // println!("{:?}",values);
-            // return QueryResult::SUCCESS;
-            let mut record = Record::empty();
-            if values.len() != self.columns.len() {
-                println!("value length not matching");
-                return QueryResult::FAILURE;
-            }
-
-            let len = values.len();
-            for i in 0..len {
-                let valid = self.validate_constraints_on_insert(self.columns[i].name(), values[i].clone());
-                if !valid {
-                    return QueryResult::FAILURE;
-                }
-                let ft = FieldTypes::create_with_value_ta_(&self.columns[i].data_type, &values[i]);
-                if ft.is_none() {
-                    println!("error parsing values");
-                    // self.decrement_recordid();
-                    return QueryResult::FAILURE;
-                }
-                let ftvalue = ft.unwrap();
-                let rv: RecordValue = RecordValue::new(RecordValueTypes::Value(ftvalue));
-                record.fields.push(rv);
-            }
-
-            self.records.push(record);
+        pub fn insert(&mut self, s: Statement, db: &mut Database) -> QueryResult {
             return QueryResult::SUCCESS;
+        }
+        pub fn insert_record(&mut self, r: Record) {
+            self.records.push(r);
         }
         pub fn select(&mut self, s: Statement) -> QueryResult {
             let selecttext = s.verbs[0].clone();

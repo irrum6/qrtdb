@@ -87,6 +87,7 @@ pub mod field_types {
         }
 
         pub fn create_with_value(fieldname: &str, value: &str) -> Option<FieldTypes> {
+            //  n i s v f d
             return match fieldname {
                 "number" | "num" => {
                     let x: f64 = value.parse().unwrap();
@@ -163,6 +164,18 @@ pub mod field_types {
                 FieldTypes::Date(_) => String::from("date"),
             };
         }
+        
+        pub fn to2(f: FieldTypes) -> String {
+            return match f {
+                FieldTypes::Number(_) => String::from("num"),
+                FieldTypes::Integer(_) => String::from("int"),
+                FieldTypes::SignedInteger(_) => String::from("sig"),
+                FieldTypes::Varchar(_) => String::from("vchar"),
+                FieldTypes::Fxchar(_) => String::from("fchar"),
+                FieldTypes::Date(_) => String::from("date"),
+            };
+        }
+        
 
         pub fn tostr(f: &FieldTypes) -> String {
             return match f {

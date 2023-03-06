@@ -2,8 +2,9 @@ pub mod database {
     use std::collections::HashMap;
     // use std::ops::Index;
     use crate::{
-        qrtlib::{Constraint,FieldTypes, QueryResult, Table, Varchar},
-        statements::statements::Statement, table::table::TableColumn,
+        qrtlib::{Constraint, ConstraintTypes, FieldTypes, QueryResult, Record, Table, Varchar},
+        statements::statements::Statement,
+        table::{table::{RecordValue, RecordValueTypes}, self},
     };
 
     pub struct Database {
@@ -47,7 +48,7 @@ pub mod database {
                 return;
             }
             self.namespaces.retain(|ns| ns != &namespace);
-        }        
+        }
 
         pub fn set_namespace(&mut self, name: &str) {
             if !self.namespaces.contains(&String::from(name)) {
@@ -59,7 +60,6 @@ pub mod database {
             return self.namespace.clone();
         }
         pub fn insert_info_table(&mut self) -> QueryResult {
-            
             // let date = TableField::new2(String::from("date"), FieldTypes::Date(0));
             // let vmajor = TableField::new2(String::from("version_major"), FieldTypes::Integer(0));
             // let vminor = TableField::new2(String::from("version_minor"), FieldTypes::Integer(0));
@@ -86,9 +86,37 @@ pub mod database {
             tname.push_str(name);
             return tname;
         }
+        pub fn search_for_value_in_table(&self, tablename: &String, name: String, value: String) -> bool {
+            println!("{}",tablename);
+            let binding = tablename.replace("@", "");
+            let split:Vec<&str> = binding.split("::").collect();
+
+            let mut tablename_parsed:String = String::from(split[1]);
+            tablename_parsed.push_str("_");
+            tablename_parsed.push_str(split[2]);
+
+            println!("97:{}",&tablename_parsed);
+
+            let index = self.table_indexes.get(&tablename_parsed);
+            if index.is_none() {
+                println!("table referenced is not found");
+                return false;
+            }
+            let table_index = index.unwrap();
+            return self.tables[*table_index as usize].search_for_value(name, value);
+        }
         pub fn check_column_referenced(&self, cs: &Constraint, ftype: String) -> bool {
-            let tablename = cs.ref_table.clone().replace("@", "").replace("::", "_");
-            let index = self.table_indexes.get(&tablename);
+            println!("{}",cs.ref_table.clone());
+            let binding =  cs.ref_table.clone().replace("@", "");
+            let split:Vec<&str> = binding.split("::").collect();
+
+            let mut tablename_parsed:String = String::from(split[1]);
+            tablename_parsed.push_str("_");
+            tablename_parsed.push_str(split[2]);
+
+            println!("115:{}",&tablename_parsed);
+
+            let index = self.table_indexes.get(&tablename_parsed);
 
             if index.is_none() {
                 println!("table referenced is not found");
@@ -102,7 +130,10 @@ pub mod database {
                     continue;
                 }
                 found = true;
-                if FieldTypes::to(f.typef()) != ftype {
+                // println!("{} {}",f.typef(),&ftype);
+                // let ft = FieldTypes::from(&ftype);
+                //not necessarily great solution
+                if FieldTypes::to2(f.typef()) != ftype {
                     println!("Column referenced has different type");
                     return false;
                 }
@@ -130,7 +161,7 @@ pub mod database {
                 return QueryResult::SUCCESS;
             }
             return QueryResult::FAILURE;
-        }        
+        }
         pub fn remove_table(&mut self, name: &str) {
             //get index
             //swap remove by index
@@ -171,15 +202,92 @@ pub mod database {
                 return QueryResult::FAILURE;
             };
         }
+        fn validate_constraints_on_insert(&self, name: String, value: String, index: usize) -> bool {
+            if self.tables[index].get_constraints_referenced().len() == 0 {
+                return true;
+            }
+
+            let colindex = self.tables[index].get_column_index(&name);
+            if colindex.is_none() {
+                println!("field not found, probably Ok");
+                return true;
+            }
+            let colindex = colindex.unwrap();
+
+            for c in self.tables[index].get_constraints_referenced() {
+                if c.col() != name {
+                    continue;
+                }
+                match c.ct() {
+                    ConstraintTypes::Unique | ConstraintTypes::PrimaryKey => {
+                        //check for unique constraint
+                        for r in self.tables[index].get_records_referenced() {
+                            if let Some(field) = &r.get(colindex as usize) {
+                                if field.to_string() == value {
+                                    println!("unique constraint violated");
+                                    return false;
+                                }
+                            }
+                        }
+                    }
+                    //weak/partial constraint , only enforced at insertion
+                    ConstraintTypes::ColumnMatch => {
+                        return self.search_for_value_in_table(&c.ref_table, c.ref_column.clone(), value);
+                    }
+                    ConstraintTypes::ForeignKey => {}
+                    _ => {}
+                }
+            }
+            return true;
+        }
 
         pub fn insert(&mut self, tablename: String, s: Statement) -> QueryResult {
             // println!("{}", tablename);
-            if let Some(table_index) = self.table_indexes.get(&tablename) {
-                return self.tables[*table_index as usize].insert(s);
-            } else {
+            let table_index = self.table_indexes.get(&tablename);
+            if table_index.is_none() {
                 println!("no tables were found with such name");
                 return QueryResult::FAILURE;
-            };
+            }
+            let table_index = table_index.unwrap();
+
+            let inserttext = s.verbs[0].clone();
+            let binding = inserttext.replace("#", "");
+            let mut values: Vec<String> = binding.split(",").map(|e| e.to_string()).collect();
+            // let mut target = self.tables[*table_index as usize];
+            self.tables[*table_index as usize].increment_recordid();
+            let rid = self.tables[*table_index as usize].get_recordid_counter().to_string();
+            values.insert(0, rid);
+
+            let mut record = Record::empty();
+            if values.len() != self.tables[*table_index as usize].get_columns_referenced().len() {
+                println!("value length not matching");
+                return QueryResult::FAILURE;
+            }
+
+            let len = values.len();
+            for i in 0..len {
+                let column = self.tables[*table_index as usize].get_column_name(i);
+                let valid = self.validate_constraints_on_insert(column, values[i].clone(), *table_index as usize);
+                if !valid {
+                    return QueryResult::FAILURE;
+                }
+                let ft = FieldTypes::create_with_value_ta_(
+                    self.tables[*table_index as usize].get_columns_referenced()[i].data_type_ref(),
+                    &values[i],
+                );
+                if ft.is_none() {
+                    println!("error parsing values");
+                    // self.decrement_recordid();
+                    return QueryResult::FAILURE;
+                }
+                let ftvalue = ft.unwrap();
+                let rv: RecordValue = RecordValue::new(RecordValueTypes::Value(ftvalue));
+                record.fields.push(rv);
+            }
+
+            self.tables[*table_index as usize].insert_record(record);
+            return QueryResult::SUCCESS;
+            // return self.tables[*table_index as usize].insert(s, &mut self);
         }
         pub fn select(&mut self, tablename: String, s: Statement) -> QueryResult {
             // println!("{}", tablename);
