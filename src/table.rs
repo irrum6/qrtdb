@@ -1,161 +1,137 @@
 pub mod table {
     use crate::{
+        field_types,
         qrtlib::{Database, FieldTypes, Fixedchar, QueryResult, Varchar},
         statements::statements::Statement,
     };
-
     #[derive(Clone)]
-    pub struct TableField {
+    pub struct TableColumn {
         name: String,
-        tf_type: FieldTypes,
+        data_type: FieldTypes,
+        nullable: bool,
+        unique: bool,
     }
-
-    impl TableField {
-        pub fn new(name: &str, ftype: &str) -> Option<TableField> {
+    impl TableColumn {
+        pub fn new(name: String, data_type: FieldTypes, nullable: bool, unique: bool) -> Option<TableColumn> {
+            let taco = TableColumn {
+                name,
+                data_type,
+                nullable,
+                unique,
+            };
+            return Some(taco);
+        }
+        pub fn from(name: &str, ftype: &str) -> Option<TableColumn> {
             if name == "" {
                 return None;
             }
-            if let Some(tf_type) = FieldTypes::from(ftype) {
-                return Some(TableField {
+            if let Some(data_type) = FieldTypes::from(ftype) {
+                return Some(TableColumn {
                     name: String::from(name),
-                    tf_type,
+                    data_type,
+                    nullable: false,
+                    unique: false,
                 });
             } else {
                 return None;
             }
         }
-        pub fn new2(name: String, tf_type: FieldTypes) -> TableField {
-            return TableField { name, tf_type };
+
+        pub fn set_nullable(&mut self, v: bool) {
+            self.nullable = v;
+        }
+
+        pub fn set_unique(&mut self, v: bool) {
+            self.unique = v;
         }
 
         pub fn name(&self) -> String {
             return self.name.clone();
         }
-
-        pub fn set(&mut self, s: &String) {
-            // println!("{}",self.name());
-            let tf = match &self.tf_type {
-                FieldTypes::Number(_) => FieldTypes::Number(s.parse().expect("f64")),
-                FieldTypes::Integer(_) => FieldTypes::Integer(s.parse().expect("u64")),
-                FieldTypes::SignedInteger(_) => FieldTypes::SignedInteger(s.parse().expect("i64")),
-                FieldTypes::Varchar(v) => FieldTypes::Varchar(Varchar::new(v.len(), s.clone())),
-                FieldTypes::Fxchar(v) => FieldTypes::Fxchar(Fixedchar::new(v.len(), s.clone())),
-                FieldTypes::Date(_) => FieldTypes::Date(s.parse().expect("number")),
-            };
-            self.tf_type = tf;
-        }
-        pub fn to_string(&self) -> String {
-            return match &self.tf_type {
-                FieldTypes::Number(v) => v.to_string(),
-                FieldTypes::Integer(v) => v.to_string(),
-                FieldTypes::SignedInteger(v) => v.to_string(),
-                FieldTypes::Varchar(v) => v.get(),
-                FieldTypes::Fxchar(v) => v.get(),
-                FieldTypes::Date(v) => v.to_string(),
-            };
-        }
-
-        pub fn equal(t: TableField, t2: TableField) -> bool {
+        pub fn equal(t: TableColumn, t2: TableColumn) -> bool {
             return t.typef() == t2.typef();
         }
+
+        pub fn self_equal(&self, tc: TableColumn) -> bool {
+            return self.data_type == tc.typef();
+        }
         pub fn typef(&self) -> FieldTypes {
-            return self.tf_type.clone();
-        }
-
-        pub fn serialize(t: TableField) -> Vec<u8> {
-            return match t.tf_type {
-                FieldTypes::Number(num) => num.to_be_bytes().to_vec(),
-                FieldTypes::Integer(int) => int.to_be_bytes().to_vec(),
-                FieldTypes::Varchar(var) => var.get().into_bytes(),
-                FieldTypes::Fxchar(var) => var.get().into_bytes(),
-                FieldTypes::Date(int) => int.to_be_bytes().to_vec(),
-                FieldTypes::SignedInteger(int) => int.to_be_bytes().to_vec(),
-            };
-        }
-        pub fn deserialize(f: FieldTypes, name: String, v: Vec<u8>) -> TableField {
-            let tf_type: FieldTypes = match f {
-                FieldTypes::Number(_) => {
-                    let mut x: [u8; 8] = [0; 8];
-                    for i in 0..8 {
-                        x[i] = v[i];
-                    }
-                    FieldTypes::Number(f64::from_be_bytes(x))
-                }
-                FieldTypes::Integer(_) => {
-                    let mut x: [u8; 8] = [0; 8];
-                    for i in 0..8 {
-                        x[i] = v[i];
-                    }
-                    FieldTypes::Integer(u64::from_be_bytes(x))
-                }
-                FieldTypes::SignedInteger(_) => {
-                    let mut x: [u8; 8] = [0; 8];
-                    for i in 0..8 {
-                        x[i] = v[i];
-                    }
-                    FieldTypes::SignedInteger(i64::from_be_bytes(x))
-                }
-                FieldTypes::Varchar(vchar) => FieldTypes::Varchar(Varchar::new(vchar.len(), String::from_utf8(v).unwrap())),
-                FieldTypes::Fxchar(vchar) => FieldTypes::Fxchar(Fixedchar::new(vchar.len(), String::from_utf8(v).unwrap())),
-                FieldTypes::Date(_) => {
-                    let mut x: [u8; 8] = [0; 8];
-                    for i in 0..8 {
-                        x[i] = v[i];
-                    }
-                    FieldTypes::Date(u64::from_be_bytes(x))
-                }
-            };
-            return TableField { name, tf_type };
-            // return TableField::new("age", "integer");
+            return self.data_type.clone();
         }
     }
-
-    struct Record {
-        table: String,
-        fields: Vec<TableField>,
-        d: bool,
+    #[derive(Clone, PartialEq)]
+    pub enum RecordValueTypes {
+        Value(FieldTypes),
+        NULL,
     }
 
-    impl Record {
-        pub fn new(fields: Vec<TableField>, table: String) -> Record {
-            return Record { table, fields, d: false };
+    impl RecordValueTypes {}
+
+    #[derive(Clone, PartialEq)]
+    pub struct RecordValue {
+        pub(super) value: RecordValueTypes,
+    }
+    impl RecordValue {
+        pub(super) fn new(value: RecordValueTypes) -> RecordValue {
+            return RecordValue { value };
+        }
+        pub fn to_string(&self) -> String {
+            return match &self.value {
+                RecordValueTypes::Value(v) => FieldTypes::tostr(&v),
+                RecordValueTypes::NULL => String::new(),
+            };
+        }
+        pub fn set(&mut self, r: RecordValueTypes) {
+            self.value = r;
+        }
+        pub fn get(&self) -> RecordValueTypes {
+            return self.value.clone();
+        }
+        pub fn get_referenced(&self) -> &RecordValueTypes {
+            return &self.value;
         }
 
-        pub fn setd(&mut self, d: bool) {
-            self.d = d;
-        }
-
-        pub fn d(&self) -> bool {
-            return self.d;
-        }
-
-        pub fn get(&self, name: String) -> Option<TableField> {
-            for field in &self.fields.clone() {
-                if field.name == name {
-                    return Some(field.clone());
-                }
+        pub fn from(f: String) -> Option<RecordValue> {
+            if let Some(ftype) = FieldTypes::from(&f) {
+                return Some(RecordValue {
+                    value: RecordValueTypes::Value(ftype),
+                });
             }
             return None;
         }
-        pub fn set(&mut self, name: String, v: &String) {
-            for field in &mut self.fields {
-                if field.name == name {
-                    field.set(v);
-                    break;
-                }
+    }
+    struct Record {
+        pub(super) fields: Vec<RecordValue>,
+    }
+
+    impl Record {
+        pub fn new(fields: Vec<RecordValue>) -> Record {
+            return Record { fields };
+        }
+        pub fn empty() -> Record {
+            let fields: Vec<RecordValue> = Vec::new();
+            return Record { fields };
+        }
+
+        pub fn get(&self, index: usize) -> Option<RecordValue> {
+            if index > self.fields.len() {
+                return None;
             }
+            return Some(self.fields[index].clone());
+        }
+        pub fn set(&mut self, index: usize, v: &String) {
+            if index > self.fields.len() {
+                return;
+            }
+            // self.fields[index].set(v);
         }
         pub fn serialize_record(record: Record) -> Vec<u8> {
             let data: Vec<u8> = Vec::new();
             return data;
         }
         pub fn deserialize_record(data: Vec<u8>, table: Table) -> Record {
-            let fields: Vec<TableField> = Vec::new();
-            return Record {
-                table: table.tname(),
-                fields,
-                d: true,
-            };
+            let fields: Vec<RecordValue> = Vec::new();
+            return Record { fields };
         }
     }
     #[derive(Clone, PartialEq)]
@@ -216,9 +192,22 @@ pub mod table {
                 ref_column,
             };
         }
+        pub fn ct(&self) -> ConstraintTypes {
+            return self.ctype.clone();
+        }
+
         pub fn col(&self) -> String {
             return self.column.clone();
         }
+
+        pub fn refta(&self) -> &String {
+            return &self.ref_table;
+        }
+
+        pub fn refcol(&self) -> &String {
+            return &&self.ref_column;
+        }
+
         pub fn from_token(col: &str, token: &str) -> Option<Constraint> {
             let mut pat = "";
 
@@ -238,47 +227,43 @@ pub mod table {
                     ref_table: String::new(),
                     ref_column: String::new(),
                 });
-            } else {
-                if token.contains("=m>") {
-                    pat = "=m>";
-                }
-
-                if token.contains("=f>") {
-                    pat = "=f>";
-                }
-
-                if token.contains("=fk>") {
-                    pat = "=fk>";
-                }
-                if pat.len() > 0 {
-                    let column = String::from(col);
-                    let split: Vec<String> = token.trim().replace(pat, "").split(".").map(|e| String::from(e)).collect();
-                    if split.len() != 2 {
-                        println!("bad reference");
-                        return None;
-                    }
-                    let ref_table = split[0].clone();
-                    let ref_column = split[1].clone();
-                    let ctype = ConstraintTypes::from(pat);
-
-                    return Some(Constraint {
-                        ctype,
-                        column,
-                        ref_table,
-                        ref_column,
-                    });
-                }
-                return None;
             }
-        }
+            if token.contains("=m>") {
+                pat = "=m>";
+            }
 
-        pub fn ct(&self) -> ConstraintTypes {
-            return self.ctype.clone();
+            if token.contains("=f>") {
+                pat = "=f>";
+            }
+
+            if token.contains("=fk>") {
+                pat = "=fk>";
+            }
+            if pat.len() > 0 {
+                let column = String::from(col);
+                let split: Vec<String> = token.trim().replace(pat, "").split(".").map(|e| String::from(e)).collect();
+                if split.len() != 2 {
+                    println!("bad reference");
+                    return None;
+                }
+                let ref_table = split[0].clone();
+                let ref_column = split[1].clone();
+                let ctype = ConstraintTypes::from(pat);
+
+                return Some(Constraint {
+                    ctype,
+                    column,
+                    ref_table,
+                    ref_column,
+                });
+            }
+            return None;
         }
     }
     pub struct Table {
         name: String,
-        fields: Vec<TableField>,
+        head: Vec<String>,
+        columns: Vec<TableColumn>,
         records: Vec<Record>,
         rid_counter: u64,
         // depends on tables
@@ -287,18 +272,44 @@ pub mod table {
         relatives: Vec<String>,
     }
     impl Table {
-        pub fn new(name: &str, fields: Vec<TableField>, constraints: Vec<Constraint>) -> Table {
+        pub fn create_table_column() {
+            // ->Option<TableColumn>
+            // name: String,
+            // data_type: FieldTypes,
+            // nullable: bool,
+            // unique: bool,
+            // is_primary_key: bool,
+            // is_foreign_key: bool,
+            // matches_other_column: bool,
+        }
+        pub fn new(name: &str, columns: Vec<TableColumn>, constraints: Vec<Constraint>) -> Table {
             let records: Vec<Record> = Vec::new();
             let relatives: Vec<String> = Vec::new();
+            let mut head: Vec<String> = Vec::new();
+
+            for c in &columns {
+                head.push(c.name());
+            }
             let table = Table {
                 name: String::from(name),
-                fields,
+                head,
+                columns,
                 records,
                 rid_counter: 0,
                 constraints,
                 relatives,
             };
             return table;
+        }
+        pub fn get_column_index(&self, col: &String) -> Option<usize> {
+            let mut index = 0;
+            for h in &self.head {
+                if h == col {
+                    return Some(index);
+                }
+                index += 1;
+            }
+            return None;
         }
         pub fn build_from_statement(create_text: String, namespace: &str, db: &Database) -> Option<Table> {
             // Table
@@ -312,7 +323,15 @@ pub mod table {
 
             let len = fields.len();
 
-            let mut tablefields: Vec<TableField> = Vec::new();
+            let mut tablefields: Vec<TableColumn> = Vec::new();
+            // push the id column first
+            if let Some(id) = TableColumn::from("id", "int") {
+                tablefields.push(id);
+            } else {
+                println!("could not insert auto id column");
+                return None;
+            }
+
             let mut cst: Vec<Constraint> = Vec::new();
             for ix in 0..len {
                 let split: Vec<&str> = fields[ix].split(":").collect();
@@ -368,20 +387,20 @@ pub mod table {
                         }
                     }
                 }
+                let data_t = FieldTypes::from(ftype);
 
-                if let Some(tf) = TableField::new(name, ftype) {
+                if data_t.is_none() {
+                    println!("not valid data type");
+                    return None;
+                }
+                let data_type = data_t.unwrap();
+                if let Some(tf) = TableColumn::new(String::from(name), data_type, false, false) {
                     tablefields.push(tf);
                 } else {
                     return None;
                 }
             }
 
-            if let Some(id) = TableField::new("id", "int") {
-                tablefields.push(id);
-            } else {
-                println!("could not insert auto id column");
-                return None;
-            }
             let full_table_name = Database::compose_table_name(namespace, &name);
             let table = Table::new(full_table_name.as_str(), tablefields, cst);
             return Some(table);
@@ -394,14 +413,11 @@ pub mod table {
             self.relatives.push(s);
         }
 
-        fn auto_primary_key(&mut self) -> bool {
-            return true;
-        }
         pub fn tname(&self) -> String {
             return self.name.clone();
         }
-        pub fn get_fields(&self) -> Vec<TableField> {
-            return self.fields.clone();
+        pub fn get_columns(&self) -> Vec<TableColumn> {
+            return self.columns.clone();
         }
         pub fn get_recordid_counter(&self) -> u64 {
             return self.rid_counter;
@@ -410,8 +426,8 @@ pub mod table {
             return self.rid_counter += 1;
         }
         pub fn info(&self) -> QueryResult {
-            for f in &self.fields {
-                println!("{}-{}", f.name(), FieldTypes::describe(f.typef()));
+            for f in &self.columns {
+                println!("{}-{}", f.name(), FieldTypes::describe(&f.data_type));
             }
             for c in &self.constraints {
                 println!("{}-{}", &c.col(), ConstraintTypes::describe(&c.ct()));
@@ -426,15 +442,23 @@ pub mod table {
             if self.constraints.len() == 0 {
                 return true;
             }
+
+            let colindex = self.get_column_index(&name);
+            if colindex.is_none() {
+                println!("field not found, probably Ok");
+                return true;
+            }
+            let colindex = colindex.unwrap();
+
             for c in &self.constraints {
                 if c.col() != name {
                     continue;
                 }
                 match c.ct() {
-                    ConstraintTypes::Unique => {
+                    ConstraintTypes::Unique | ConstraintTypes::PrimaryKey => {
                         //check for unique constraint
                         for r in &self.records {
-                            if let Some(field) = r.get(c.col()) {
+                            if let Some(field) = &r.get(colindex as usize) {
                                 if field.to_string() == value {
                                     println!("unique constraint violated");
                                     return false;
@@ -452,29 +476,35 @@ pub mod table {
             let inserttext = s.verbs[0].clone();
             let binding = inserttext.replace("#", "");
             let mut values: Vec<String> = binding.split(",").map(|e| e.to_string()).collect();
+            self.increment_recordid();
             let rid = self.get_recordid_counter().to_string();
-            values.push(rid);
+            values.insert(0, rid);
             // println!("{:?}",values);
             // return QueryResult::SUCCESS;
-            let mut fields = self.get_fields();
-            if values.len() != fields.len() {
+            let mut record = Record::empty();
+            if values.len() != self.columns.len() {
                 println!("value length not matching");
                 return QueryResult::FAILURE;
             }
-            self.increment_recordid();
 
             let len = values.len();
             for i in 0..len {
-                let valid = self.validate_constraints_on_insert(fields[i].name(), values[i].clone());
+                let valid = self.validate_constraints_on_insert(self.columns[i].name(), values[i].clone());
                 if !valid {
                     return QueryResult::FAILURE;
                 }
-                fields[i].set(&values[i]);
+                let ft = FieldTypes::create_with_value_ta_(&self.columns[i].data_type, &values[i]);
+                if ft.is_none() {
+                    println!("error parsing values");
+                    // self.decrement_recordid();
+                    return QueryResult::FAILURE;
+                }
+                let ftvalue = ft.unwrap();
+                let rv: RecordValue = RecordValue::new(RecordValueTypes::Value(ftvalue));
+                record.fields.push(rv);
             }
 
-            let record = Record::new(fields, self.tname());
             self.records.push(record);
-
             return QueryResult::SUCCESS;
         }
         pub fn select(&mut self, s: Statement) -> QueryResult {
@@ -486,13 +516,22 @@ pub mod table {
             println!("{:?}", fields);
             println!("records:{}", &self.records.len());
 
+            let mut indexes: Vec<usize> = Vec::new();
+            for f in fields {
+                if let Some(x) = self.get_column_index(&f) {
+                    indexes.push(x);
+                }
+            }
             for r in &self.records {
                 let mut applies = true;
                 if crit.len() > 0 {
-                    // break;
                     for c in &crit {
-                        let pname = c.get_pname();
-                        if let Some(v) = &r.get(pname) {
+                        let pindex = self.get_column_index(&c.get_pname());
+                        if pindex.is_none() {
+                            continue;
+                        }
+                        let pindex = pindex.unwrap();
+                        if let Some(v) = &r.get(pindex) {
                             if !c.apply(&v) {
                                 applies = false;
                                 break;
@@ -503,15 +542,16 @@ pub mod table {
                 if !applies {
                     continue;
                 }
-                for f in &fields {
-                    if let Some(v) = &r.get(f.to_string()) {
-                        match &v.tf_type {
-                            FieldTypes::Number(x) => println!("{}:{}", f, x),
-                            FieldTypes::Integer(x) => println!("{}:{}", f, x),
-                            FieldTypes::SignedInteger(x) => println!("{}:{}", f, x),
-                            FieldTypes::Varchar(x) => println!("{}:{}", f, x.get()),
-                            FieldTypes::Fxchar(x) => println!("{}:{}", f, x.get()),
-                            FieldTypes::Date(x) => println!("{}:{}", f, x),
+                for i in &indexes {
+                    if let Some(v) = &r.get(*i) {
+                        match &v.value {
+                            RecordValueTypes::NULL => println!("null"),
+                            RecordValueTypes::Value(FieldTypes::Varchar(x)) => println!("{}", x.get()),
+                            RecordValueTypes::Value(FieldTypes::Fxchar(x)) => println!("{}", x.get()),
+                            RecordValueTypes::Value(FieldTypes::Number(x)) => println!("{}", x),
+                            RecordValueTypes::Value(FieldTypes::Integer(x)) => println!("{}", x),
+                            RecordValueTypes::Value(FieldTypes::SignedInteger(x)) => println!("{}", x),
+                            RecordValueTypes::Value(FieldTypes::Date(x)) => println!("{}", x),
                         }
                     } else {
                     }
@@ -529,15 +569,15 @@ pub mod table {
                 let mut applies = true;
                 if crit.len() > 0 {
                     // break;
-                    for c in &crit {
-                        let pname = c.get_pname();
-                        if let Some(v) = &r.get(pname) {
-                            if !c.apply(&v) {
-                                applies = false;
-                                break;
-                            }
-                        }
-                    }
+                    // for c in &crit {
+                    //     let pname = c.get_pname();
+                    //     if let Some(v) = &r.get(pname) {
+                    //         if !c.apply(&v) {
+                    //             applies = false;
+                    //             break;
+                    //         }
+                    //     }
+                    // }
                 }
                 if !applies {
                     continue;
@@ -550,7 +590,7 @@ pub mod table {
                     }
                     let pname = split_updater[0].clone();
                     let value = split_updater[1].clone();
-                    r.set(pname, &value);
+                    // r.set(pname, &value);
                 }
             }
             return QueryResult::FAILURE;
@@ -562,26 +602,28 @@ pub mod table {
                 println!("delete:empty");
                 return QueryResult::FAILURE;
             }
+            //ids array
+            //
             for r in &mut self.records {
                 let mut applies = true;
                 if crit.len() > 0 {
                     // break;
-                    for c in &crit {
-                        let pname = c.get_pname();
-                        if let Some(v) = &r.get(pname) {
-                            if !c.apply(&v) {
-                                applies = false;
-                                break;
-                            }
-                        }
-                    }
+                    // for c in &crit {
+                    //     let pname = c.get_pname();
+                    //     if let Some(v) = &r.get(pname) {
+                    //         if !c.apply(&v) {
+                    //             applies = false;
+                    //             break;
+                    //         }
+                    //     }
+                    // }
                 }
                 if !applies {
                     continue;
                 }
-                r.setd(true);
             }
-            self.records.retain(|x| !x.d());
+            // if id in ids array;
+            // self.records.retain(|x| !x.d());
 
             return QueryResult::FAILURE;
         }

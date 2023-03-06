@@ -7,7 +7,7 @@ pub mod db4 {
     };
 
     use crate::{
-        qrtlib::{DDLStatementTypes, DMLStatementTypes, Database, MetaCommands, PrepareResult, QueryResult, Table, TableField},
+        qrtlib::{DDLStatementTypes, DMLStatementTypes, Database, MetaCommands, PrepareResult, QueryResult, Table, TableColumn},
         statements::statements::{Statement, StatementCategory},
     };
 
@@ -127,11 +127,6 @@ pub mod db4 {
             // cant capture
             // table.name;
             // }
-        }
-
-        fn ls_tables(&self, name: &str) {
-            let dab_index = self.database_indexes.get(name).unwrap();
-            self.databases[*dab_index as usize].ls_tables("");
         }
 
         fn insert_into_table(&mut self, dbindex: u64, tablename: String, s: Statement) -> QueryResult {
@@ -316,7 +311,7 @@ pub mod db4 {
 
             self.databases[0].add_namespace("sys");
             self.databases[0].add_namespace("info");
-            self.databases[0].insert_info_table();
+            // self.databases[0].insert_info_table();
         }
     }
 

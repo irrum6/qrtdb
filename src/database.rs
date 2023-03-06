@@ -2,8 +2,8 @@ pub mod database {
     use std::collections::HashMap;
     // use std::ops::Index;
     use crate::{
-        qrtlib::{Constraint,FieldTypes, QueryResult, Table, TableField, Varchar},
-        statements::statements::Statement,
+        qrtlib::{Constraint,FieldTypes, QueryResult, Table, Varchar},
+        statements::statements::Statement, table::table::TableColumn,
     };
 
     pub struct Database {
@@ -60,23 +60,24 @@ pub mod database {
         }
         pub fn insert_info_table(&mut self) -> QueryResult {
             
-            let date = TableField::new2(String::from("date"), FieldTypes::Date(0));
-            let vmajor = TableField::new2(String::from("version_major"), FieldTypes::Integer(0));
-            let vminor = TableField::new2(String::from("version_minor"), FieldTypes::Integer(0));
-            let vpatch = TableField::new2(String::from("version_patch"), FieldTypes::Integer(0));
-            let vname = TableField::new2(
-                String::from("version_name"),
-                FieldTypes::Varchar(Varchar::new(24, String::new())),
-            );
-            let fields = vec![date, vmajor, vminor, vpatch, vname];
-            let cst: Vec<Constraint> = Vec::new();
+            // let date = TableField::new2(String::from("date"), FieldTypes::Date(0));
+            // let vmajor = TableField::new2(String::from("version_major"), FieldTypes::Integer(0));
+            // let vminor = TableField::new2(String::from("version_minor"), FieldTypes::Integer(0));
+            // let vpatch = TableField::new2(String::from("version_patch"), FieldTypes::Integer(0));
+            // let vname = TableField::new2(
+            //     String::from("version_name"),
+            //     FieldTypes::Varchar(Varchar::new(24, String::new())),
+            // );
+            // let fields = vec![date, vmajor, vminor, vpatch, vname];
+            // let cst: Vec<Constraint> = Vec::new();
 
-            let info = String::from("info");
-            if !self.namespaces.contains(&info) {
-                self.namespaces.push(info);
-            }
+            // let info = String::from("info");
+            // if !self.namespaces.contains(&info) {
+            //     self.namespaces.push(info);
+            // }
 
-            return self.insert_table(String::from("infotable"), fields, cst, "info");
+            // return self.insert_table(String::from("infotable"), fields, cst, "info");
+            return QueryResult::FAILURE;
         }
 
         pub fn compose_table_name(namespace: &str, name: &str) -> String {
@@ -94,7 +95,7 @@ pub mod database {
                 return false;
             }
             let table_index = index.unwrap();
-            let fields = self.tables[*table_index as usize].get_fields();
+            let fields = self.tables[*table_index as usize].get_columns();
             let mut found = false;
             for f in fields {
                 if &f.name() != &cs.col() {
@@ -129,17 +130,7 @@ pub mod database {
                 return QueryResult::SUCCESS;
             }
             return QueryResult::FAILURE;
-        }
-        fn insert_table(&mut self, name: String, fields: Vec<TableField>, cst: Vec<Constraint>, namespace: &str) -> QueryResult {
-            let full_table_name = Database::compose_table_name(namespace, &name);
-            let table = Table::new(full_table_name.as_str(), fields, cst);
-            
-            self.tables.push(table);
-
-            self.table_indexes.insert(String::from(full_table_name), self.tindex);
-            self.tindex += 1;
-            return QueryResult::SUCCESS;
-        }
+        }        
         pub fn remove_table(&mut self, name: &str) {
             //get index
             //swap remove by index

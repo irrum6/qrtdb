@@ -18,7 +18,7 @@ pub mod qrtlib {
     pub use super::statements::statements::{
         Criteria, DDLStatementTypes, DMLStatementTypes, PrepareResult, QueryResult, WhereClauses,
     };
-    pub use super::table::table::{Table, TableField,Constraint,ConstraintTypes};
+    pub use super::table::table::{Table, TableColumn,Constraint,ConstraintTypes};
     pub fn help() {
         println!("Help!");
     }

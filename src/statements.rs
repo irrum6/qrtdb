@@ -1,5 +1,5 @@
 pub mod statements {
-    use crate::qrtlib::{Database, FieldTypes, TableField};
+    use crate::{qrtlib::{FieldTypes}, table::table::{RecordValueTypes, RecordValue}};
     #[derive(Clone, PartialEq)]
     pub enum DDLStatementTypes {
         CreateDatabase,
@@ -161,33 +161,34 @@ pub mod statements {
     }
 
     impl Criteria {
-        pub fn apply(&self, t: &TableField) -> bool {
-            if t.name() != self.pname {
-                return false;
-            }
+        pub fn apply(&self, rev: &RecordValue) -> bool {
+            // if t.name() != self.pname {
+            //     return false;
+            // }
             // if &self.clause == WhereClauses::Empty {
             //     return true;
             // }
 
-            return match t.typef() {
-                FieldTypes::Number(v) => {
+            return match rev.get_referenced() {
+                RecordValueTypes::Value(FieldTypes::Number(v))                 => {
                     let x: f64 = self.value.parse().unwrap();
-                    return WhereClauses::number_cmp(&self.clause, v, x);
+                    return WhereClauses::number_cmp(&self.clause, *v, x);
                 }
-                FieldTypes::Integer(v) => {
+                RecordValueTypes::Value(FieldTypes::Integer(v)) => {
                     let x: u64 = self.value.parse().unwrap();
-                    return WhereClauses::int_cmp(&self.clause, v, x);
+                    return WhereClauses::int_cmp(&self.clause, *v, x);
                 }
-                FieldTypes::SignedInteger(v) => {
+                RecordValueTypes::Value(FieldTypes::SignedInteger(v)) => {
                     let x: i64 = self.value.parse().unwrap();
-                    return WhereClauses::sigint_cmp(&self.clause, v, x);
+                    return WhereClauses::sigint_cmp(&self.clause, *v, x);
                 }
-                FieldTypes::Varchar(v) => v.compare(self.value.clone(), self.clause.clone()),
-                FieldTypes::Fxchar(v) => v.compare(self.value.clone(), self.clause.clone()),
-                FieldTypes::Date(v) => {
+                RecordValueTypes::Value(FieldTypes::Varchar(v)) => v.compare(self.value.clone(), self.clause.clone()),
+                RecordValueTypes::Value(FieldTypes::Fxchar(v)) => v.compare(self.value.clone(), self.clause.clone()),
+                RecordValueTypes::Value(FieldTypes::Date(v)) => {
                     let x: u64 = self.value.parse().unwrap();
-                    return WhereClauses::int_cmp(&self.clause, v, x);
+                    return WhereClauses::int_cmp(&self.clause, *v, x);
                 }
+                RecordValueTypes::NULL => false
             };
         }
 
