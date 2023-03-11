@@ -7,8 +7,8 @@ pub mod db4 {
     };
 
     use crate::{
-        qrtlib::{DDLStatementTypes, DMLStatementTypes, Database, MetaCommands, PrepareResult, QueryResult, Table, TableColumn},
-        statements::statements::{Statement, StatementCategory},
+        qrtlib::statements::{DDLStatementTypes, DMLStatementTypes, PrepareResult, QueryResult, Statement, StatementCategory},
+        qrtlib::{Database, MetaCommands, Table, TableColumn},
     };
 
     // meta commands

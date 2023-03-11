@@ -1,8 +1,8 @@
 pub mod table {
     use crate::{
-        field_types,
-        qrtlib::{Database, FieldTypes, Fixedchar, QueryResult, Varchar},
-        statements::statements::Statement,
+        qrtlib::statements::QueryResult,
+        qrtlib::statements::Statement,
+        qrtlib::{Database, FieldTypes},
     };
     #[derive(Clone)]
     pub struct TableColumn {
@@ -213,7 +213,7 @@ pub mod table {
 
         pub fn from_token(col: &str, token: &str) -> Option<Constraint> {
             println!("{} {}", col, token);
-            
+
             let mut pat = "";
 
             if token.contains("=u>") {

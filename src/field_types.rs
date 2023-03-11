@@ -1,5 +1,5 @@
 pub mod field_types {
-    use crate::qrtlib::WhereClauses;
+    use crate::qrtlib::statements::WhereClauses;
 
     #[derive(Clone, PartialEq)]
     pub struct Varchar {

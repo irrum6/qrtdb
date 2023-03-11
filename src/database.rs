@@ -2,9 +2,9 @@ pub mod database {
     use std::collections::HashMap;
     // use std::ops::Index;
     use crate::{
-        qrtlib::{Constraint, ConstraintTypes, FieldTypes, QueryResult, Record, Table, Varchar},
-        statements::statements::Statement,
-        table::{table::{RecordValue, RecordValueTypes}, self},
+        qrtlib::{Constraint, ConstraintTypes, FieldTypes,Record, Table},
+        qrtlib::statements::{Statement,QueryResult},
+        table::table::{RecordValue, RecordValueTypes},
     };
 
     pub struct Database {

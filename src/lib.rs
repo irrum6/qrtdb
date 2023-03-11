@@ -15,9 +15,7 @@ pub mod qrtlib {
     pub use super::database::database::Database;
     pub use super::db4::db4::rundb4;
     pub use super::field_types::field_types::{FieldTypes, Fixedchar, Varchar};
-    pub use super::statements::statements::{
-        Criteria, DDLStatementTypes, DMLStatementTypes, PrepareResult, QueryResult, WhereClauses,
-    };
+    pub use super::statements::statements;
     pub use super::table::table::{Constraint, ConstraintTypes, Record, Table, TableColumn};
     pub fn help() {
         println!("Help!");
