@@ -14,9 +14,9 @@ pub mod qrtlib {
     pub use super::command_parser::command_parser::MetaCommands;
     pub use super::database::database::Database;
     pub use super::db4::db4::rundb4;
-    pub use super::field_types::field_types::{FieldTypes, Fixedchar, Varchar};
+    pub use super::field_types::field_types;
     pub use super::statements::statements;
-    pub use super::table::table::{Constraint, ConstraintTypes, Record, Table, TableColumn};
+    pub use super::table::table;
     pub fn help() {
         println!("Help!");
     }

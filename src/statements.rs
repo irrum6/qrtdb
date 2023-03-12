@@ -1,7 +1,7 @@
 pub mod statements {
     use crate::{
-        qrtlib::FieldTypes,
-        table::table::{RecordValue, RecordValueTypes},
+        qrtlib::field_types::FieldTypes,
+        qrtlib::table::{RecordValue, RecordValueTypes},
     };
     #[derive(Clone, PartialEq)]
     pub enum DDLStatementTypes {
@@ -128,6 +128,7 @@ pub mod statements {
                 ">" => WhereClauses::Greater,
                 "<" => WhereClauses::Less,
                 _ => WhereClauses::Empty,
+                //todo greater or equal
             };
         }
         pub fn number_cmp(w: &WhereClauses, v: f64, x: f64) -> bool {

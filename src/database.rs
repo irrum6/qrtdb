@@ -2,9 +2,9 @@ pub mod database {
     use std::collections::HashMap;
     // use std::ops::Index;
     use crate::{
-        qrtlib::{Constraint, ConstraintTypes, FieldTypes,Record, Table},
-        qrtlib::statements::{Statement,QueryResult},
-        table::table::{RecordValue, RecordValueTypes},
+        qrtlib::field_types::FieldTypes,
+        qrtlib::statements::{QueryResult, Statement},
+        qrtlib::table::{Constraint, ConstraintTypes, Record, RecordValue, RecordValueTypes, Table},
     };
 
     pub struct Database {
@@ -87,15 +87,15 @@ pub mod database {
             return tname;
         }
         pub fn search_for_value_in_table(&self, tablename: &String, name: String, value: String) -> bool {
-            println!("{}",tablename);
+            println!("{}", tablename);
             let binding = tablename.replace("@", "");
-            let split:Vec<&str> = binding.split("::").collect();
+            let split: Vec<&str> = binding.split("::").collect();
 
-            let mut tablename_parsed:String = String::from(split[1]);
+            let mut tablename_parsed: String = String::from(split[1]);
             tablename_parsed.push_str("_");
             tablename_parsed.push_str(split[2]);
 
-            println!("97:{}",&tablename_parsed);
+            println!("97:{}", &tablename_parsed);
 
             let index = self.table_indexes.get(&tablename_parsed);
             if index.is_none() {
@@ -106,15 +106,15 @@ pub mod database {
             return self.tables[*table_index as usize].search_for_value(name, value);
         }
         pub fn check_column_referenced(&self, cs: &Constraint, ftype: String) -> bool {
-            println!("{}",cs.ref_table.clone());
-            let binding =  cs.ref_table.clone().replace("@", "");
-            let split:Vec<&str> = binding.split("::").collect();
+            println!("{}", cs.ref_table.clone());
+            let binding = cs.ref_table.clone().replace("@", "");
+            let split: Vec<&str> = binding.split("::").collect();
 
-            let mut tablename_parsed:String = String::from(split[1]);
+            let mut tablename_parsed: String = String::from(split[1]);
             tablename_parsed.push_str("_");
             tablename_parsed.push_str(split[2]);
 
-            println!("115:{}",&tablename_parsed);
+            println!("115:{}", &tablename_parsed);
 
             let index = self.table_indexes.get(&tablename_parsed);
 

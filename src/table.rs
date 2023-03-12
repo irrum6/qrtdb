@@ -2,7 +2,8 @@ pub mod table {
     use crate::{
         qrtlib::statements::QueryResult,
         qrtlib::statements::Statement,
-        qrtlib::{Database, FieldTypes},
+        qrtlib::Database,
+        qrtlib::field_types::FieldTypes
     };
     #[derive(Clone)]
     pub struct TableColumn {
