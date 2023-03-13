@@ -8,7 +8,7 @@ pub mod db4 {
 
     use crate::{
         qrtlib::statements::{DDLStatementTypes, DMLStatementTypes, PrepareResult, QueryResult, Statement, StatementCategory},
-        qrtlib::{Database, MetaCommands}
+        qrtlib::{Database, MetaCommands},
     };
 
     // meta commands
@@ -306,6 +306,25 @@ pub mod db4 {
 
             return Ok(String::from("success"));
         }
+
+        pub fn metacommand_processor(&mut self, s: &String) -> bool {
+            let mc = MetaCommands::from(&s);
+            match mc {
+                MetaCommands::EXIT => return true,
+                MetaCommands::HELP => Database4::help(),
+                MetaCommands::TABLES => self.ls(&s),
+                MetaCommands::ReadAndExecute => {
+                    let result = self.read_and_execute(&s);
+                    if result.is_err() {
+                        println!("error occured executings script file");
+                    }
+                }
+                MetaCommands::UnrecognizedCommand => {
+                    println!("Unrecognized meta command")
+                }
+            }
+            return false;
+        }
         pub fn init_some(&mut self) {
             self.create_database("sys");
 
@@ -324,24 +343,12 @@ pub mod db4 {
         let mut line = String::new();
 
         loop {
-            println!("HTLK > ");
+            println!("Hettooluykaa > ");
             stdin().read_line(&mut line).unwrap();
             // process line
             if line.contains(".") {
-                let mc = MetaCommands::from(&line);
-                match mc {
-                    MetaCommands::EXIT => return,
-                    MetaCommands::HELP => Database4::help(),
-                    MetaCommands::TABLES => db4.ls(&line),
-                    MetaCommands::ReadAndExecute => {
-                        let result = db4.read_and_execute(&line);
-                        if result.is_err() {
-                            println!("error occured executings script file");
-                        }
-                    }
-                    MetaCommands::UnrecognizedCommand => {
-                        println!("Unrecognized meta command")
-                    }
+                if db4.metacommand_processor(&line) {
+                    return;
                 }
                 line.truncate(0);
                 continue;
@@ -349,11 +356,5 @@ pub mod db4 {
             db4.process_statement(&line);
             line.truncate(0);
         }
-
-        // fn gela() {
-        //     println!(" I am gela");
-        // }
-
-        // gela();
     }
 }
