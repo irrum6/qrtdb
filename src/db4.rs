@@ -8,12 +8,14 @@ pub mod db4 {
 
     use crate::{
         qrtlib::statements::{DDLStatementTypes, DMLStatementTypes, PrepareResult, QueryResult, Statement, StatementCategory},
-        qrtlib::{Database, MetaCommands},
+        qrtlib::{self, read2, Database, MetaCommands},
     };
+
+    use crate::qrtlib::stmnt2;
 
     // meta commands
 
-    struct Database4 {
+    pub struct Database4 {
         databases: Vec<Database>,
         database_indexes: HashMap<String, u64>,
         dbindex: u64,
@@ -219,7 +221,31 @@ pub mod db4 {
 
             return Some(QueryResult::FAILURE);
         }
-        fn execute(&mut self, s: Statement) -> QueryResult {
+        // execute_ddl_statement 2
+        fn execute_ddl(&mut self, s:Statement) -> Option<QueryResult> {
+            match s.sttype() {
+                StatementCategory::DDLStatement(DDLStatementTypes::CreateTable) => {
+                    return Some(self.create_table(s));
+                }
+                StatementCategory::DDLStatement(DDLStatementTypes::InfoTable) => {
+                    return Some(self.table_info(s));
+                }
+                StatementCategory::DDLStatement(DDLStatementTypes::CreateDatabase) => {
+                    // self.create_table(s);
+                    return Some(self.create_database(s.get_nouns()[0].as_str()));
+                }
+                StatementCategory::DDLStatement(DDLStatementTypes::CreateNamespace) => {
+                    // self.create_table(s);
+                    return Some(self.add_namespace(s));
+                }
+
+                _ => {}
+            }
+
+            return Some(QueryResult::FAILURE);
+        }
+
+        pub fn execute(&mut self, s: Statement) -> QueryResult {
             // println!("xct");
             // identify table
             let nouns = s.get_nouns();
@@ -321,6 +347,9 @@ pub mod db4 {
                 }
                 MetaCommands::UnrecognizedCommand => {
                     println!("Unrecognized meta command")
+                }
+                MetaCommands::NewParser => {
+                    read2(s, self);
                 }
             }
             return false;

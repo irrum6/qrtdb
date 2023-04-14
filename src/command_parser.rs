@@ -4,6 +4,7 @@ pub mod command_parser {
         TABLES,
         HELP,
         ReadAndExecute,
+        NewParser,
         UnrecognizedCommand,
     }
     impl MetaCommands {
@@ -14,6 +15,7 @@ pub mod command_parser {
                 ".help" | ".HELP" | ".H" | ".h" => MetaCommands::HELP,
                 ".tables" | ".TABLES" | ".T" | ".t" | ".ls" => MetaCommands::TABLES,
                 ".rex" | ".REX" | ".RX" | ".rx" => MetaCommands::ReadAndExecute,
+                ".par" | ".nup" | ".np" => MetaCommands::NewParser,
                 //ls databases
                 //in base
                 //ls namespacs

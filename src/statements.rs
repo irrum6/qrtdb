@@ -3,7 +3,7 @@ pub mod statements {
         qrtlib::field_types::FieldTypes,
         qrtlib::table::{RecordValue, RecordValueTypes},
     };
-    #[derive(Clone, PartialEq)]
+    #[derive(Debug, Clone, PartialEq)]
     pub enum DDLStatementTypes {
         CreateDatabase,
         CreateNamespace,
@@ -58,7 +58,7 @@ pub mod statements {
             };
         }
     }
-    #[derive(Clone, PartialEq)]
+    #[derive(Debug, Clone, PartialEq)]
     pub enum DMLStatementTypes {
         INSERT,
         SELECT,
@@ -92,7 +92,7 @@ pub mod statements {
         }
     }
 
-    #[derive(Clone, PartialEq)]
+    #[derive(Debug, Clone, PartialEq)]
     pub enum StatementCategory {
         DDLStatement(DDLStatementTypes),
         DMLStatement(DMLStatementTypes),
@@ -112,7 +112,7 @@ pub mod statements {
             }
         }
     }
-    #[derive(Clone)]
+    #[derive(Debug, Clone)]
     pub enum WhereClauses {
         Equal,
         NonEqual,
@@ -159,7 +159,7 @@ pub mod statements {
             };
         }
     }
-    #[derive(Clone)]
+    #[derive(Clone, Debug)]
     pub struct Criteria {
         clause: WhereClauses,
         pname: String,
@@ -256,6 +256,7 @@ pub mod statements {
         FAILURE,
     }
 
+    #[derive(Debug, Clone)]
     pub struct Statement {
         st_type: StatementCategory,
         nouns: Vec<String>,
@@ -279,6 +280,9 @@ pub mod statements {
                 verbs,
                 criteria,
             };
+        }
+        pub fn empty() -> Statement {
+            return Statement::new("");
         }
         pub fn sttype(&self) -> StatementCategory {
             return self.st_type.clone();
@@ -318,6 +322,41 @@ pub mod statements {
                 }
             }
 
+            if self.verbs.len() != 1 {
+                println!("there should be only one verb");
+                if self.verbs.len() > 1 {
+                    println!("more than one verb was provided");
+                }
+                if self.verbs.len() == 0 {
+                    println!("no verb was provided");
+                }
+                return PrepareResult::UnrecognizedStatement;
+            }
+
+            return match self.st_type {
+                StatementCategory::UNRECOGNIZED => PrepareResult::UnrecognizedStatement,
+                _ => PrepareResult::SUCCESS,
+            };
+        }
+        //new fn
+
+        pub fn add_verb(&mut self, s: String) {
+            self.verbs.push(s);
+        }
+
+        pub fn add_noun(&mut self, s: String) {
+            self.nouns.push(s);
+        }
+
+        pub fn add_crit(&mut self, c: Criteria) {
+            self.criteria.push(c);
+        }
+
+        pub fn set_category(&mut self, s: StatementCategory) {
+            self.st_type = s;
+        }
+
+        pub fn prepare2(&mut self) -> PrepareResult {
             if self.verbs.len() != 1 {
                 println!("there should be only one verb");
                 if self.verbs.len() > 1 {

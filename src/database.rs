@@ -7,6 +7,11 @@ pub mod database {
         qrtlib::table::{Constraint, ConstraintTypes, Record, RecordValue, RecordValueTypes, Table},
     };
 
+    pub struct Namespace {
+        name: String,
+        table_indexes: HashMap<String, u64>,
+    }
+
     pub struct Database {
         name: String,
         namespaces: Vec<String>,
@@ -35,7 +40,7 @@ pub mod database {
             return self.name.clone();
         }
         pub fn add_namespace(&mut self, name: &str) {
-            let namespace = String::from(name);
+            let namespace = String::from(name.trim());
             if self.namespaces.contains(&namespace) {
                 println!("namespace exists in this database");
                 return;
@@ -149,7 +154,7 @@ pub mod database {
         pub fn create_table(&mut self, s: Statement, namespace: &str) -> QueryResult {
             //process statements
             if !self.namespaces.contains(&String::from(namespace)) {
-                println!("namespace not found");
+                println!("database.create_table: namespace not found {}", namespace);
                 return QueryResult::FAILURE;
             }
             let create_text = s.verbs[0].clone();
