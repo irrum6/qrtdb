@@ -64,7 +64,6 @@ pub mod statements {
         SELECT,
         UPDATE,
         DELETE,
-        ORDER,
         NONVALID,
     }
     impl DMLStatementTypes {
@@ -86,7 +85,6 @@ pub mod statements {
                 '$' => DMLStatementTypes::SELECT,
                 '*' => DMLStatementTypes::UPDATE,
                 '!' => DMLStatementTypes::DELETE,
-                '?' => DMLStatementTypes::ORDER,
                 _ => DMLStatementTypes::NONVALID,
             };
         }
