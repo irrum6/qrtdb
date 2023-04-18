@@ -4,7 +4,7 @@ pub mod database {
     use crate::{
         qrtlib::field_types::FieldTypes,
         qrtlib::statements::{QueryResult, Statement},
-        qrtlib::table::{Constraint, ConstraintTypes, Record, RecordValue, RecordValueTypes, Table},
+        qrtlib::table::{Constraint, ConstraintTypes, Record, RecordValue, Table},
     };
 
     pub struct Namespace {
@@ -286,7 +286,7 @@ pub mod database {
                     return QueryResult::FAILURE;
                 }
                 let ftvalue = ft.unwrap();
-                let rv: RecordValue = RecordValue::new(RecordValueTypes::Value(ftvalue));
+                let rv: RecordValue = RecordValue::new(ftvalue);
                 record.fields.push(rv);
             }
 

@@ -1,7 +1,7 @@
 pub mod statements {
     use crate::{
         qrtlib::field_types::FieldTypes,
-        qrtlib::table::{RecordValue, RecordValueTypes},
+        qrtlib::table::{RecordValue},
     };
     #[derive(Debug, Clone, PartialEq)]
     pub enum DDLStatementTypes {
@@ -174,25 +174,24 @@ pub mod statements {
             // }
 
             return match rev.get_referenced() {
-                RecordValueTypes::Value(FieldTypes::Number(v)) => {
+                FieldTypes::Number(v) => {
                     let x: f64 = self.value.parse().unwrap();
                     return WhereClauses::number_cmp(&self.clause, *v, x);
                 }
-                RecordValueTypes::Value(FieldTypes::Integer(v)) => {
+                FieldTypes::Integer(v) => {
                     let x: u64 = self.value.parse().unwrap();
                     return WhereClauses::int_cmp(&self.clause, *v, x);
                 }
-                RecordValueTypes::Value(FieldTypes::SignedInteger(v)) => {
+                FieldTypes::SignedInteger(v) => {
                     let x: i64 = self.value.parse().unwrap();
                     return WhereClauses::sigint_cmp(&self.clause, *v, x);
                 }
-                RecordValueTypes::Value(FieldTypes::Varchar(v)) => v.compare(self.value.clone(), self.clause.clone()),
-                RecordValueTypes::Value(FieldTypes::Fxchar(v)) => v.compare(self.value.clone(), self.clause.clone()),
-                RecordValueTypes::Value(FieldTypes::Date(v)) => {
+                FieldTypes::Varchar(v) => v.compare(self.value.clone(), self.clause.clone()),
+                FieldTypes::Fxchar(v) => v.compare(self.value.clone(), self.clause.clone()),
+                FieldTypes::Date(v) => {
                     let x: u64 = self.value.parse().unwrap();
                     return WhereClauses::int_cmp(&self.clause, *v, x);
                 }
-                RecordValueTypes::NULL => false,
             };
         }
 

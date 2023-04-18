@@ -9,15 +9,13 @@ pub mod table {
     pub struct TableColumn {
         name: String,
         data_type: FieldTypes,
-        nullable: bool,
         unique: bool,
     }
     impl TableColumn {
-        pub fn new(name: String, data_type: FieldTypes, nullable: bool, unique: bool) -> Option<TableColumn> {
+        pub fn new(name: String, data_type: FieldTypes, unique: bool) -> Option<TableColumn> {
             let taco = TableColumn {
                 name,
                 data_type,
-                nullable,
                 unique,
             };
             return Some(taco);
@@ -30,7 +28,6 @@ pub mod table {
                 return Some(TableColumn {
                     name: String::from(name),
                     data_type,
-                    nullable: false,
                     unique: false,
                 });
             } else {
@@ -39,10 +36,6 @@ pub mod table {
         }
         pub fn data_type_ref(&self) -> &FieldTypes {
             return &self.data_type;
-        }
-
-        pub fn set_nullable(&mut self, v: bool) {
-            self.nullable = v;
         }
 
         pub fn set_unique(&mut self, v: bool) {
@@ -63,42 +56,32 @@ pub mod table {
             return self.data_type.clone();
         }
     }
-    #[derive(Clone, PartialEq)]
-    pub enum RecordValueTypes {
-        Value(FieldTypes),
-        NULL,
-    }
-
-    impl RecordValueTypes {}
 
     #[derive(Clone, PartialEq)]
     pub struct RecordValue {
-        pub(super) value: RecordValueTypes,
+        pub(super) value: FieldTypes,
     }
     impl RecordValue {
-        pub fn new(value: RecordValueTypes) -> RecordValue {
+        pub fn new(value: FieldTypes) -> RecordValue {
             return RecordValue { value };
         }
         pub fn to_string(&self) -> String {
-            return match &self.value {
-                RecordValueTypes::Value(v) => FieldTypes::tostr(&v),
-                RecordValueTypes::NULL => String::new(),
-            };
+            return FieldTypes::tostr(&self.value);
         }
-        pub fn set(&mut self, r: RecordValueTypes) {
+        pub fn set(&mut self, r: FieldTypes) {
             self.value = r;
         }
-        pub fn get(&self) -> RecordValueTypes {
+        pub fn get(&self) -> FieldTypes {
             return self.value.clone();
         }
-        pub fn get_referenced(&self) -> &RecordValueTypes {
+        pub fn get_referenced(&self) -> &FieldTypes {
             return &self.value;
         }
 
         pub fn from(f: String) -> Option<RecordValue> {
             if let Some(ftype) = FieldTypes::from(&f) {
                 return Some(RecordValue {
-                    value: RecordValueTypes::Value(ftype),
+                    value: ftype,
                 });
             }
             return None;
@@ -282,7 +265,6 @@ pub mod table {
             // ->Option<TableColumn>
             // name: String,
             // data_type: FieldTypes,
-            // nullable: bool,
             // unique: bool,
             // is_primary_key: bool,
             // is_foreign_key: bool,
@@ -403,7 +385,7 @@ pub mod table {
                     return None;
                 }
                 let data_type = data_t.unwrap();
-                if let Some(tf) = TableColumn::new(String::from(name), data_type, false, false) {
+                if let Some(tf) = TableColumn::new(String::from(name), data_type, false) {
                     tablefields.push(tf);
                 } else {
                     return None;
@@ -519,13 +501,12 @@ pub mod table {
                 for i in &indexes {
                     if let Some(v) = &r.get(*i) {
                         match &v.value {
-                            RecordValueTypes::NULL => println!("null"),
-                            RecordValueTypes::Value(FieldTypes::Varchar(x)) => println!("{}", x.get()),
-                            RecordValueTypes::Value(FieldTypes::Fxchar(x)) => println!("{}", x.get()),
-                            RecordValueTypes::Value(FieldTypes::Number(x)) => println!("{}", x),
-                            RecordValueTypes::Value(FieldTypes::Integer(x)) => println!("{}", x),
-                            RecordValueTypes::Value(FieldTypes::SignedInteger(x)) => println!("{}", x),
-                            RecordValueTypes::Value(FieldTypes::Date(x)) => println!("{}", x),
+                            FieldTypes::Varchar(x) => println!("{}", x.get()),
+                            FieldTypes::Fxchar(x) => println!("{}", x.get()),
+                            FieldTypes::Number(x) => println!("{}", x),
+                            FieldTypes::Integer(x) => println!("{}", x),
+                            FieldTypes::SignedInteger(x) => println!("{}", x),
+                            FieldTypes::Date(x) => println!("{}", x),
                         }
                     } else {
                     }

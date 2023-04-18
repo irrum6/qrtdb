@@ -2,7 +2,7 @@
 pub mod statements_new {
     use crate::{
         qrtlib::field_types::FieldTypes,
-        qrtlib::table::{RecordValue, RecordValueTypes},
+        qrtlib::table::{RecordValue,},
     };
     #[derive(Clone, PartialEq)]
     pub enum DDLTypes {
