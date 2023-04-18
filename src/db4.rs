@@ -204,9 +204,6 @@ pub mod db4 {
                 StatementCategory::DDLStatement(DDLStatementTypes::CreateTable) => {
                     return Some(self.create_table(s));
                 }
-                StatementCategory::DDLStatement(DDLStatementTypes::InfoTable) => {
-                    return Some(self.table_info(s));
-                }
                 StatementCategory::DDLStatement(DDLStatementTypes::CreateDatabase) => {
                     // self.create_table(s);
                     return Some(self.create_database(s.get_nouns()[0].as_str()));
@@ -226,9 +223,6 @@ pub mod db4 {
             match s.sttype() {
                 StatementCategory::DDLStatement(DDLStatementTypes::CreateTable) => {
                     return Some(self.create_table(s));
-                }
-                StatementCategory::DDLStatement(DDLStatementTypes::InfoTable) => {
-                    return Some(self.table_info(s));
                 }
                 StatementCategory::DDLStatement(DDLStatementTypes::CreateDatabase) => {
                     // self.create_table(s);
