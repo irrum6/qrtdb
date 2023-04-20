@@ -137,7 +137,9 @@ pub mod token {
             tuple((
                 multispace0,
                 tag("$ "),
+                // multispace1,
                 combinator::map(take_until(" $"), |inner: &str| PrimaryExpression::Read(inner)),
+                // multispace1,
                 tag(" $"),
             )),
             //position of tuple where PrimaryExpression lives
@@ -149,7 +151,7 @@ pub mod token {
         combinator::map(
             tuple((
                 tag("* "),
-                combinator::map(take_until(" 8"), |inner: &str| PrimaryExpression::Change(inner)),
+                combinator::map(take_until(" *"), |inner: &str| PrimaryExpression::Change(inner)),
                 tag(" *"),
             )),
             |x| x.1,
@@ -204,18 +206,21 @@ pub mod token {
         alt((is_noun, parse_id, criteria, limit))(input)
     }
 
-    fn whole_statement(input: &str) -> IResult<&str, PrimaryExpression> {
-        //whoah i get it now
-        //but it doesn't work
-        terminated(
-            // tuple((alt((is_dml, is_ddl)), parse_id)),
-            alt((is_dml, is_ddl)),
-            // parse_id
-            ncchar(';'),
-            // tag(";")
-        )(input)
-    }
+    // fn whole_statement(input: &str) -> IResult<&str, PrimaryExpression> {
+    //     //whoah i get it now
+    //     //but it doesn't work
+    //     terminated(
+    //         // tuple((alt((is_dml, is_ddl)), parse_id)),
+    //         //spaces
+    //         delimited(multispace0, alt((is_dml, is_ddl)), multispace0),
+    //         ncchar(';'),
+    //         // tag(";")
+    //     )(input)
+    // }
 
+    fn ok_content(){
+
+    }
     fn process_content(input: &str) -> Statement {
         let mut emsta = Statement::empty();
         let mut proc_input = input;
@@ -252,9 +257,9 @@ pub mod token {
                             println!("object");
                             //need to split here
                             let strabons = s.split("::");
-                            for s in strabons{
+                            for s in strabons {
                                 emsta.add_noun(s.to_string());
-                            }                            
+                            }
                         }
                         _ => {
                             println!("Other expression");
@@ -263,6 +268,10 @@ pub mod token {
                     println!("------");
                     println!("remaining {}", rem);
                     if rem.is_empty() {
+                        break;
+                    }
+                    if rem == " " {
+                        println!("last space");
                         break;
                     }
                     proc_input = rem;
@@ -282,8 +291,6 @@ pub mod token {
         return emsta;
     }
 
-    fn parse_to_statement(input: &str) {}
-
     fn read_till_semicolon(input: &str) -> IResult<&str, Statement> {
         combinator::map(
             tuple((
@@ -295,7 +302,7 @@ pub mod token {
     }
     //Vec<stmnt2::Statement>
 
-    fn whole_statement2(input: &str) -> IResult<&str, Statement> {
+    pub fn whole_statement2(input: &str) -> IResult<&str, Statement> {
         // combinator::map(
         //     tuple((
         //         multispace0,

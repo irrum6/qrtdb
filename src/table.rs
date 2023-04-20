@@ -1,9 +1,6 @@
 pub mod table {
     use crate::{
-        qrtlib::statements::QueryResult,
-        qrtlib::statements::Statement,
-        qrtlib::Database,
-        qrtlib::field_types::FieldTypes
+        qrtlib::field_types::FieldTypes, qrtlib::statements::QueryResult, qrtlib::statements::Statement, qrtlib::Database,
     };
     #[derive(Clone)]
     pub struct TableColumn {
@@ -13,11 +10,7 @@ pub mod table {
     }
     impl TableColumn {
         pub fn new(name: String, data_type: FieldTypes, unique: bool) -> Option<TableColumn> {
-            let taco = TableColumn {
-                name,
-                data_type,
-                unique,
-            };
+            let taco = TableColumn { name, data_type, unique };
             return Some(taco);
         }
         pub fn from(name: &str, ftype: &str) -> Option<TableColumn> {
@@ -80,9 +73,7 @@ pub mod table {
 
         pub fn from(f: String) -> Option<RecordValue> {
             if let Some(ftype) = FieldTypes::from(&f) {
-                return Some(RecordValue {
-                    value: ftype,
-                });
+                return Some(RecordValue { value: ftype });
             }
             return None;
         }
@@ -132,10 +123,10 @@ pub mod table {
     impl ConstraintTypes {
         pub fn from(ctype: &str) -> ConstraintTypes {
             return match ctype {
-                "=m>" => ConstraintTypes::ColumnMatch,
-                "=p>" => ConstraintTypes::PrimaryKey,
-                "=f>" | "=fk>" => ConstraintTypes::ForeignKey,
-                "=u>" => ConstraintTypes::Unique,
+                "=m>" | "m" => ConstraintTypes::ColumnMatch,
+                "=p>" | "pk" | "p" => ConstraintTypes::PrimaryKey,
+                "=f>" | "=fk>" | "fk" | "f" => ConstraintTypes::ForeignKey,
+                "=u>" | "uq" | "u" => ConstraintTypes::Unique,
                 "==>" => ConstraintTypes::NoConstraint,
                 _ => ConstraintTypes::NoConstraint,
             };

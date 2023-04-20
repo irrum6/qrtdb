@@ -8,7 +8,7 @@ pub mod db4 {
 
     use crate::{
         qrtlib::statements::{DDLStatementTypes, DMLStatementTypes, PrepareResult, QueryResult, Statement, StatementCategory},
-        qrtlib::{self, read2, Database, MetaCommands},
+        qrtlib::{self, read2,whole_statement2, Database, MetaCommands},
     };
 
     use crate::qrtlib::stmnt2;
@@ -136,7 +136,7 @@ pub mod db4 {
         }
 
         fn select_from_table(&mut self, dbindex: u64, tablename: String, s: Statement) -> QueryResult {
-            println!("sft");
+            println!("read table");
             return self.databases[dbindex as usize].select(tablename, s);
         }
 
@@ -287,6 +287,20 @@ pub mod db4 {
                 };
             }
         }
+        pub fn process_statement2(&mut self, line: &String){
+            match whole_statement2(&line) {
+                Ok((rem, stmt)) => {
+                    self.execute(stmt);
+                }
+                Err(nom::Err::Error(ne)) => {
+                    println!("Nom error");
+                    println!("{:?}", ne);
+                }
+                Err(e) => {
+                    println!("Other error");
+                }
+            }
+        }
         pub fn help() {}
         pub fn ls(&mut self, s: &String) {
             //over space
@@ -376,7 +390,8 @@ pub mod db4 {
                 line.truncate(0);
                 continue;
             }
-            db4.process_statement(&line);
+            // db4.process_statement(&line);
+            db4.process_statement2(&line);            
             line.truncate(0);
         }
     }
