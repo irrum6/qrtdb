@@ -1,8 +1,5 @@
 pub mod statements {
-    use crate::{
-        qrtlib::field_types::FieldTypes,
-        qrtlib::table::{RecordValue},
-    };
+    use crate::{qrtlib::field_types::FieldTypes, qrtlib::table::RecordValue};
     #[derive(Debug, Clone, PartialEq)]
     pub enum DDLTypes {
         CreateDatabase,
@@ -14,14 +11,14 @@ pub mod statements {
         DropDatabase,
         DropNamespace,
         DropTable,
-        NONVALID,
+        NotADDL,
     }
 
     impl DDLTypes {
         pub fn from(token: &str) -> DDLTypes {
             if token.len() == 0 {
                 println!("empty token");
-                return DDLTypes::NONVALID;
+                return DDLTypes::NotADDL;
             }
             // let s = String::from(token);
             println!("{}", token);
@@ -33,7 +30,7 @@ pub mod statements {
 
             // ignore before better parser
             if String::from(start) != end.chars().rev().collect::<String>() {
-                return DDLTypes::NONVALID;
+                return DDLTypes::NotADDL;
             }
             let mut startend: String = start.to_owned();
             startend.push_str(end);
@@ -48,7 +45,7 @@ pub mod statements {
                 "#nn#" => DDLTypes::CreateNamespace,
                 "*nn*" => DDLTypes::AlterNamespace,
                 "!nn!" => DDLTypes::DropNamespace,
-                _ => DDLTypes::NONVALID,
+                _ => DDLTypes::NotADDL,
             };
         }
     }
@@ -58,20 +55,20 @@ pub mod statements {
         SELECT,
         UPDATE,
         DELETE,
-        NONVALID,
+        NotADML,
     }
     impl DMLTypes {
         pub fn from(token: &str) -> DMLTypes {
             if token.len() == 0 {
                 println!("empty token");
-                return DMLTypes::NONVALID;
+                return DMLTypes::NotADML;
             }
             let chars: Vec<char> = token.chars().collect();
             let start = chars[0];
             let end = chars[chars.len() - 1];
 
             if start != end {
-                return DMLTypes::NONVALID;
+                return DMLTypes::NotADML;
             }
 
             return match start {
@@ -79,15 +76,15 @@ pub mod statements {
                 '$' => DMLTypes::SELECT,
                 '*' => DMLTypes::UPDATE,
                 '!' => DMLTypes::DELETE,
-                _ => DMLTypes::NONVALID,
+                _ => DMLTypes::NotADML,
             };
         }
     }
 
     #[derive(Debug, Clone, PartialEq)]
     pub enum StatementCategory {
-        DDLStatement(DDLTypes),
-        DMLStatement(DMLTypes),
+        DDL(DDLTypes),
+        DML(DMLTypes),
         UNRECOGNIZED,
     }
     impl StatementCategory {
@@ -95,10 +92,10 @@ pub mod statements {
             let dml = DMLTypes::from(token);
             let ddl = DDLTypes::from(token);
 
-            if ddl != DDLTypes::NONVALID {
-                return StatementCategory::DDLStatement(ddl);
-            } else if dml != DMLTypes::NONVALID {
-                return StatementCategory::DMLStatement(dml);
+            if ddl != DDLTypes::NotADDL {
+                return StatementCategory::DDL(ddl);
+            } else if dml != DMLTypes::NotADML {
+                return StatementCategory::DML(dml);
             } else {
                 return StatementCategory::UNRECOGNIZED;
             }

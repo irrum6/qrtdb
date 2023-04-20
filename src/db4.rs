@@ -181,16 +181,16 @@ pub mod db4 {
                 tablename_full = Database::compose_table_name(&namespace, &tablename);
             }
             match s.sttype() {
-                StatementCategory::DMLStatement(DMLTypes::INSERT) => {
+                StatementCategory::DML(DMLTypes::INSERT) => {
                     return Some(self.insert_into_table(dab_index, tablename_full, s));
                 }
-                StatementCategory::DMLStatement(DMLTypes::SELECT) => {
+                StatementCategory::DML(DMLTypes::SELECT) => {
                     return Some(self.select_from_table(dab_index, tablename_full, s));
                 }
-                StatementCategory::DMLStatement(DMLTypes::UPDATE) => {
+                StatementCategory::DML(DMLTypes::UPDATE) => {
                     return Some(self.update_rows_in_table(dab_index, tablename_full, s));
                 }
-                StatementCategory::DMLStatement(DMLTypes::DELETE) => {
+                StatementCategory::DML(DMLTypes::DELETE) => {
                     return Some(self.delete_rows_in_table(dab_index, tablename_full, s));
                 }
                 _ => {
@@ -201,14 +201,14 @@ pub mod db4 {
 
         fn execute_ddl_statement(&mut self, s: Statement) -> Option<QueryResult> {
             match s.sttype() {
-                StatementCategory::DDLStatement(DDLTypes::CreateTable) => {
+                StatementCategory::DDL(DDLTypes::CreateTable) => {
                     return Some(self.create_table(s));
                 }
-                StatementCategory::DDLStatement(DDLTypes::CreateDatabase) => {
+                StatementCategory::DDL(DDLTypes::CreateDatabase) => {
                     // self.create_table(s);
                     return Some(self.create_database(s.get_nouns()[0].as_str()));
                 }
-                StatementCategory::DDLStatement(DDLTypes::CreateNamespace) => {
+                StatementCategory::DDL(DDLTypes::CreateNamespace) => {
                     // self.create_table(s);
                     return Some(self.add_namespace(s));
                 }
@@ -229,12 +229,12 @@ pub mod db4 {
             }
 
             match s.sttype() {
-                StatementCategory::DMLStatement(_) => {
+                StatementCategory::DML(_) => {
                     if let Some(r) = self.execute_dml_statement(s) {
                         return r;
                     }
                 }
-                StatementCategory::DDLStatement(_) => {
+                StatementCategory::DDL(_) => {
                     if let Some(qres) = self.execute_ddl_statement(s) {
                         return qres;
                     }
