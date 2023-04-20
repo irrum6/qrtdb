@@ -7,11 +7,11 @@ pub mod db4 {
     };
 
     use crate::{
-        qrtlib::statements::{DDLStatementTypes, DMLStatementTypes, PrepareResult, QueryResult, Statement, StatementCategory},
+        qrtlib::statements::{DDLTypes, DMLTypes, PrepareResult, QueryResult, Statement, StatementCategory},
         qrtlib::{self, read2,whole_statement2, Database, MetaCommands},
     };
 
-    use crate::qrtlib::stmnt2;
+    // use crate::qrtlib::stmnt2;
 
     // meta commands
 
@@ -181,16 +181,16 @@ pub mod db4 {
                 tablename_full = Database::compose_table_name(&namespace, &tablename);
             }
             match s.sttype() {
-                StatementCategory::DMLStatement(DMLStatementTypes::INSERT) => {
+                StatementCategory::DMLStatement(DMLTypes::INSERT) => {
                     return Some(self.insert_into_table(dab_index, tablename_full, s));
                 }
-                StatementCategory::DMLStatement(DMLStatementTypes::SELECT) => {
+                StatementCategory::DMLStatement(DMLTypes::SELECT) => {
                     return Some(self.select_from_table(dab_index, tablename_full, s));
                 }
-                StatementCategory::DMLStatement(DMLStatementTypes::UPDATE) => {
+                StatementCategory::DMLStatement(DMLTypes::UPDATE) => {
                     return Some(self.update_rows_in_table(dab_index, tablename_full, s));
                 }
-                StatementCategory::DMLStatement(DMLStatementTypes::DELETE) => {
+                StatementCategory::DMLStatement(DMLTypes::DELETE) => {
                     return Some(self.delete_rows_in_table(dab_index, tablename_full, s));
                 }
                 _ => {
@@ -201,34 +201,14 @@ pub mod db4 {
 
         fn execute_ddl_statement(&mut self, s: Statement) -> Option<QueryResult> {
             match s.sttype() {
-                StatementCategory::DDLStatement(DDLStatementTypes::CreateTable) => {
+                StatementCategory::DDLStatement(DDLTypes::CreateTable) => {
                     return Some(self.create_table(s));
                 }
-                StatementCategory::DDLStatement(DDLStatementTypes::CreateDatabase) => {
+                StatementCategory::DDLStatement(DDLTypes::CreateDatabase) => {
                     // self.create_table(s);
                     return Some(self.create_database(s.get_nouns()[0].as_str()));
                 }
-                StatementCategory::DDLStatement(DDLStatementTypes::CreateNamespace) => {
-                    // self.create_table(s);
-                    return Some(self.add_namespace(s));
-                }
-
-                _ => {}
-            }
-
-            return Some(QueryResult::FAILURE);
-        }
-        // execute_ddl_statement 2
-        fn execute_ddl(&mut self, s:Statement) -> Option<QueryResult> {
-            match s.sttype() {
-                StatementCategory::DDLStatement(DDLStatementTypes::CreateTable) => {
-                    return Some(self.create_table(s));
-                }
-                StatementCategory::DDLStatement(DDLStatementTypes::CreateDatabase) => {
-                    // self.create_table(s);
-                    return Some(self.create_database(s.get_nouns()[0].as_str()));
-                }
-                StatementCategory::DDLStatement(DDLStatementTypes::CreateNamespace) => {
+                StatementCategory::DDLStatement(DDLTypes::CreateNamespace) => {
                     // self.create_table(s);
                     return Some(self.add_namespace(s));
                 }

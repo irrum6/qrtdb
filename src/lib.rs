@@ -12,7 +12,7 @@ mod statements;
 
 mod parser;
 
-mod statement2;
+// mod statement2;
 
 pub mod qrtlib {
     // use crate::parser;
@@ -27,7 +27,7 @@ pub mod qrtlib {
 
     pub use super::parser::read2;
     pub use super::parser::whole_statement2;
-    pub use super::statement2::statements_new as stmnt2;
+    // pub use super::statement2::statements_new as stmnt2;
     pub fn help() {
         println!("Help!");
     }

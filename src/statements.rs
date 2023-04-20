@@ -4,7 +4,7 @@ pub mod statements {
         qrtlib::table::{RecordValue},
     };
     #[derive(Debug, Clone, PartialEq)]
-    pub enum DDLStatementTypes {
+    pub enum DDLTypes {
         CreateDatabase,
         CreateNamespace,
         CreateTable,
@@ -17,11 +17,11 @@ pub mod statements {
         NONVALID,
     }
 
-    impl DDLStatementTypes {
-        pub fn from(token: &str) -> DDLStatementTypes {
+    impl DDLTypes {
+        pub fn from(token: &str) -> DDLTypes {
             if token.len() == 0 {
                 println!("empty token");
-                return DDLStatementTypes::NONVALID;
+                return DDLTypes::NONVALID;
             }
             // let s = String::from(token);
             println!("{}", token);
@@ -33,77 +33,78 @@ pub mod statements {
 
             // ignore before better parser
             if String::from(start) != end.chars().rev().collect::<String>() {
-                return DDLStatementTypes::NONVALID;
+                return DDLTypes::NONVALID;
             }
             let mut startend: String = start.to_owned();
             startend.push_str(end);
 
             return match startend.as_str() {
-                "#dd#" => DDLStatementTypes::CreateDatabase,
-                "*dd*" => DDLStatementTypes::AlterDatabase,
-                "!dd!" => DDLStatementTypes::DropDatabase,
-                "#tt#" => DDLStatementTypes::CreateTable,
-                "*tt*" => DDLStatementTypes::AlterTable,
-                "!tt!" => DDLStatementTypes::DropTable,
-                "#nn#" => DDLStatementTypes::CreateNamespace,
-                "*nn*" => DDLStatementTypes::AlterNamespace,
-                "!nn!" => DDLStatementTypes::DropNamespace,
-                _ => DDLStatementTypes::NONVALID,
+                "#dd#" => DDLTypes::CreateDatabase,
+                "*dd*" => DDLTypes::AlterDatabase,
+                "!dd!" => DDLTypes::DropDatabase,
+                "#tt#" => DDLTypes::CreateTable,
+                "*tt*" => DDLTypes::AlterTable,
+                "!tt!" => DDLTypes::DropTable,
+                "#nn#" => DDLTypes::CreateNamespace,
+                "*nn*" => DDLTypes::AlterNamespace,
+                "!nn!" => DDLTypes::DropNamespace,
+                _ => DDLTypes::NONVALID,
             };
         }
     }
     #[derive(Debug, Clone, PartialEq)]
-    pub enum DMLStatementTypes {
+    pub enum DMLTypes {
         INSERT,
         SELECT,
         UPDATE,
         DELETE,
         NONVALID,
     }
-    impl DMLStatementTypes {
-        pub fn from(token: &str) -> DMLStatementTypes {
+    impl DMLTypes {
+        pub fn from(token: &str) -> DMLTypes {
             if token.len() == 0 {
                 println!("empty token");
-                return DMLStatementTypes::NONVALID;
+                return DMLTypes::NONVALID;
             }
             let chars: Vec<char> = token.chars().collect();
             let start = chars[0];
             let end = chars[chars.len() - 1];
 
             if start != end {
-                return DMLStatementTypes::NONVALID;
+                return DMLTypes::NONVALID;
             }
 
             return match start {
-                '#' => DMLStatementTypes::INSERT,
-                '$' => DMLStatementTypes::SELECT,
-                '*' => DMLStatementTypes::UPDATE,
-                '!' => DMLStatementTypes::DELETE,
-                _ => DMLStatementTypes::NONVALID,
+                '#' => DMLTypes::INSERT,
+                '$' => DMLTypes::SELECT,
+                '*' => DMLTypes::UPDATE,
+                '!' => DMLTypes::DELETE,
+                _ => DMLTypes::NONVALID,
             };
         }
     }
 
     #[derive(Debug, Clone, PartialEq)]
     pub enum StatementCategory {
-        DDLStatement(DDLStatementTypes),
-        DMLStatement(DMLStatementTypes),
+        DDLStatement(DDLTypes),
+        DMLStatement(DMLTypes),
         UNRECOGNIZED,
     }
     impl StatementCategory {
         pub fn from(token: &str) -> StatementCategory {
-            let dml = DMLStatementTypes::from(token);
-            let ddl = DDLStatementTypes::from(token);
+            let dml = DMLTypes::from(token);
+            let ddl = DDLTypes::from(token);
 
-            if ddl != DDLStatementTypes::NONVALID {
+            if ddl != DDLTypes::NONVALID {
                 return StatementCategory::DDLStatement(ddl);
-            } else if dml != DMLStatementTypes::NONVALID {
+            } else if dml != DMLTypes::NONVALID {
                 return StatementCategory::DMLStatement(dml);
             } else {
                 return StatementCategory::UNRECOGNIZED;
             }
         }
     }
+    // CriteriaTypes
     #[derive(Debug, Clone)]
     pub enum WhereClauses {
         Equal,

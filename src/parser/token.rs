@@ -20,7 +20,7 @@ pub mod token {
 
     // use crate::qrtlib::stmnt2;
 
-    use crate::qrtlib::statements::{DDLStatementTypes, DMLStatementTypes, PrepareResult, Statement, StatementCategory};
+    use crate::qrtlib::statements::{DDLTypes, DMLTypes, PrepareResult, Statement, StatementCategory};
 
     use crate::qrtlib::Database4;
 
@@ -234,22 +234,22 @@ pub mod token {
 
                     match token {
                         PrimaryExpression::AddNamespace(s) => {
-                            emsta.set_category(StatementCategory::DDLStatement(DDLStatementTypes::CreateNamespace));
+                            emsta.set_category(StatementCategory::DDLStatement(DDLTypes::CreateNamespace));
                             emsta.add_verb(s.to_string());
                         }
                         PrimaryExpression::AddTable(s) => {
-                            emsta.set_category(StatementCategory::DDLStatement(DDLStatementTypes::CreateTable));
+                            emsta.set_category(StatementCategory::DDLStatement(DDLTypes::CreateTable));
                             emsta.add_verb(s.to_string());
                         }
                         PrimaryExpression::Add(s) => {
                             println!("additio");
-                            emsta.set_category(StatementCategory::DMLStatement(DMLStatementTypes::INSERT));
+                            emsta.set_category(StatementCategory::DMLStatement(DMLTypes::INSERT));
                             emsta.add_verb(s.to_string());
                         }
 
                         PrimaryExpression::Read(s) => {
-                            println!("redditio");
-                            emsta.set_category(StatementCategory::DMLStatement(DMLStatementTypes::SELECT));
+                            println!("readitio");
+                            emsta.set_category(StatementCategory::DMLStatement(DMLTypes::SELECT));
                             emsta.add_verb(s.to_string());
                         }
 
