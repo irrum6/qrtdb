@@ -51,9 +51,9 @@ pub mod db4 {
         }
 
         pub fn add_namespace(&mut self, s: Statement) -> QueryResult {
-            let nouns = s.get_nouns();
+            let objectnames = s.get_objectnames();
 
-            if nouns.len() < 1 {
+            if objectnames.len() < 1 {
                 println!("no id");
                 return QueryResult::FAILURE;
             }
@@ -63,15 +63,15 @@ pub mod db4 {
         }
 
         fn create_table(&mut self, s: Statement) -> QueryResult {
-            let nouns = s.get_nouns();
+            let objectnames = s.get_objectnames();
             let mut dbname = String::new();
             let mut namespace = String::new();
             let mut dab_index: u64 = 0;
-            if nouns.len() > 1 {
-                dbname = nouns[0].clone();
-                namespace = nouns[1].clone();
-            } else if nouns.len() > 0 {
-                dbname = nouns[0].clone();
+            if objectnames.len() > 1 {
+                dbname = objectnames[0].clone();
+                namespace = objectnames[1].clone();
+            } else if objectnames.len() > 0 {
+                dbname = objectnames[0].clone();
                 if let Some(db_index) = self.database_indexes.get(&dbname) {
                     dab_index = *db_index;
                     namespace = self.databases[dab_index as usize].get_namespace();
@@ -85,16 +85,16 @@ pub mod db4 {
         }
 
         fn table_info(&self, s: Statement) -> QueryResult {
-            let nouns = s.get_nouns();
+            let objectnames = s.get_objectnames();
             let mut dbname = String::new();
             let mut namespace = String::new();
             let mut tablename = String::new();
             let mut tablename_full = String::new();
             let mut dab_index: u64 = 0;
-            if nouns.len() > 2 {
-                dbname = nouns[0].clone();
-                namespace = nouns[1].clone();
-                tablename = nouns[2].clone();
+            if objectnames.len() > 2 {
+                dbname = objectnames[0].clone();
+                namespace = objectnames[1].clone();
+                tablename = objectnames[2].clone();
 
                 if let Some(db_index) = self.database_indexes.get(&dbname) {
                     tablename_full = Database::compose_table_name(&namespace, &tablename);
@@ -103,15 +103,15 @@ pub mod db4 {
                     println!("no database were found with such name");
                     return QueryResult::FAILURE;
                 };
-                // drop(nouns);
-            } else if nouns.len() > 1 {
-                namespace = nouns[0].clone();
-                tablename = nouns[1].clone();
+                // drop(objectnames);
+            } else if objectnames.len() > 1 {
+                namespace = objectnames[0].clone();
+                tablename = objectnames[1].clone();
                 dab_index = self.working_database_index;
 
                 tablename_full = Database::compose_table_name(&namespace, &tablename);
             } else {
-                tablename = nouns[0].clone();
+                tablename = objectnames[0].clone();
                 dab_index = self.working_database_index;
                 namespace = self.databases[dab_index as usize].get_namespace();
 
@@ -148,16 +148,16 @@ pub mod db4 {
             return self.databases[dbindex as usize].delete(tablename, s);
         }
         fn execute_dml_statement(&mut self, s: Statement) -> Option<QueryResult> {
-            let nouns = s.get_nouns();
+            let objectnames = s.get_objectnames();
             let mut dbname = String::new();
             let mut namespace = String::new();
             let mut tablename = String::new();
             let mut tablename_full = String::new();
             let mut dab_index: u64 = 0;
-            if nouns.len() > 2 {
-                dbname = nouns[0].clone();
-                namespace = nouns[1].clone();
-                tablename = nouns[2].clone();
+            if objectnames.len() > 2 {
+                dbname = objectnames[0].clone();
+                namespace = objectnames[1].clone();
+                tablename = objectnames[2].clone();
 
                 if let Some(db_index) = self.database_indexes.get(&dbname) {
                     tablename_full = Database::compose_table_name(&namespace, &tablename);
@@ -166,31 +166,31 @@ pub mod db4 {
                     println!("no database were found with such name");
                     return Some(QueryResult::FAILURE);
                 };
-                // drop(nouns);
-            } else if nouns.len() > 1 {
-                namespace = nouns[0].clone();
-                tablename = nouns[1].clone();
+                // drop(objectnames);
+            } else if objectnames.len() > 1 {
+                namespace = objectnames[0].clone();
+                tablename = objectnames[1].clone();
                 dab_index = self.working_database_index;
 
                 tablename_full = Database::compose_table_name(&namespace, &tablename);
             } else {
-                tablename = nouns[0].clone();
+                tablename = objectnames[0].clone();
                 dab_index = self.working_database_index;
                 namespace = self.databases[dab_index as usize].get_namespace();
 
                 tablename_full = Database::compose_table_name(&namespace, &tablename);
             }
             match s.sttype() {
-                StatementCategory::DML(DMLTypes::INSERT) => {
+                StatementCategory::DML(DMLTypes::ADD) => {
                     return Some(self.insert_into_table(dab_index, tablename_full, s));
                 }
-                StatementCategory::DML(DMLTypes::SELECT) => {
+                StatementCategory::DML(DMLTypes::READ) => {
                     return Some(self.select_from_table(dab_index, tablename_full, s));
                 }
-                StatementCategory::DML(DMLTypes::UPDATE) => {
+                StatementCategory::DML(DMLTypes::CHANGE) => {
                     return Some(self.update_rows_in_table(dab_index, tablename_full, s));
                 }
-                StatementCategory::DML(DMLTypes::DELETE) => {
+                StatementCategory::DML(DMLTypes::REMOVE) => {
                     return Some(self.delete_rows_in_table(dab_index, tablename_full, s));
                 }
                 _ => {
@@ -201,14 +201,14 @@ pub mod db4 {
 
         fn execute_ddl_statement(&mut self, s: Statement) -> Option<QueryResult> {
             match s.sttype() {
-                StatementCategory::DDL(DDLTypes::CreateTable) => {
+                StatementCategory::DDL(DDLTypes::AddTable) => {
                     return Some(self.create_table(s));
                 }
-                StatementCategory::DDL(DDLTypes::CreateDatabase) => {
+                StatementCategory::DDL(DDLTypes::AddDatabase) => {
                     // self.create_table(s);
-                    return Some(self.create_database(s.get_nouns()[0].as_str()));
+                    return Some(self.create_database(s.get_objectnames()[0].as_str()));
                 }
-                StatementCategory::DDL(DDLTypes::CreateNamespace) => {
+                StatementCategory::DDL(DDLTypes::AddNamespace) => {
                     // self.create_table(s);
                     return Some(self.add_namespace(s));
                 }
@@ -222,8 +222,8 @@ pub mod db4 {
         pub fn execute(&mut self, s: Statement) -> QueryResult {
             // println!("xct");
             // identify table
-            let nouns = s.get_nouns();
-            if nouns.len() == 0 {
+            let objectnames = s.get_objectnames();
+            if objectnames.len() == 0 {
                 println!("no ids were provided");
                 return QueryResult::FAILURE;
             }

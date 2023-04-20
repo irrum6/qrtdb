@@ -2,15 +2,14 @@ pub mod statements {
     use crate::{qrtlib::field_types::FieldTypes, qrtlib::table::RecordValue};
     #[derive(Debug, Clone, PartialEq)]
     pub enum DDLTypes {
-        CreateDatabase,
-        CreateNamespace,
-        CreateTable,
-        AlterDatabase,
-        AlterNamespace,
-        AlterTable,
-        DropDatabase,
-        DropNamespace,
-        DropTable,
+        AddDatabase,
+        AddNamespace,
+        AddTable,
+        ChangeDatabase,
+        ChangeTable,
+        RemoveDatabase,
+        RemoveNamespace,
+        RemoveTable,
         NotADDL,
     }
 
@@ -36,25 +35,24 @@ pub mod statements {
             startend.push_str(end);
 
             return match startend.as_str() {
-                "#dd#" => DDLTypes::CreateDatabase,
-                "*dd*" => DDLTypes::AlterDatabase,
-                "!dd!" => DDLTypes::DropDatabase,
-                "#tt#" => DDLTypes::CreateTable,
-                "*tt*" => DDLTypes::AlterTable,
-                "!tt!" => DDLTypes::DropTable,
-                "#nn#" => DDLTypes::CreateNamespace,
-                "*nn*" => DDLTypes::AlterNamespace,
-                "!nn!" => DDLTypes::DropNamespace,
+                "#dd#" => DDLTypes::AddDatabase,
+                "*dd*" => DDLTypes::ChangeDatabase,
+                "!dd!" => DDLTypes::RemoveDatabase,
+                "#tt#" => DDLTypes::AddTable,
+                "*tt*" => DDLTypes::ChangeTable,
+                "!tt!" => DDLTypes::RemoveTable,
+                "#nn#" => DDLTypes::AddNamespace,
+                "!nn!" => DDLTypes::RemoveNamespace,
                 _ => DDLTypes::NotADDL,
             };
         }
     }
     #[derive(Debug, Clone, PartialEq)]
     pub enum DMLTypes {
-        INSERT,
-        SELECT,
-        UPDATE,
-        DELETE,
+        ADD,
+        READ,
+        CHANGE,
+        REMOVE,
         NotADML,
     }
     impl DMLTypes {
@@ -72,10 +70,10 @@ pub mod statements {
             }
 
             return match start {
-                '#' => DMLTypes::INSERT,
-                '$' => DMLTypes::SELECT,
-                '*' => DMLTypes::UPDATE,
-                '!' => DMLTypes::DELETE,
+                '#' => DMLTypes::ADD,
+                '$' => DMLTypes::READ,
+                '*' => DMLTypes::CHANGE,
+                '!' => DMLTypes::REMOVE,
                 _ => DMLTypes::NotADML,
             };
         }
@@ -247,8 +245,8 @@ pub mod statements {
 
     #[derive(Debug, Clone)]
     pub struct Statement {
-        st_type: StatementCategory,
-        nouns: Vec<String>,
+        category: StatementCategory,
+        objectnames: Vec<String>,
         // also known as actors
         criteria: Vec<Criteria>,
         pub verbs: Vec<String>,
@@ -257,15 +255,15 @@ pub mod statements {
 
     impl Statement {
         pub fn new(line: &str) -> Statement {
-            let st_type = StatementCategory::UNRECOGNIZED;
+            let category = StatementCategory::UNRECOGNIZED;
             let text = String::from(line.trim());
-            let nouns: Vec<String> = Vec::new();
+            let objectnames: Vec<String> = Vec::new();
             let verbs: Vec<String> = Vec::new();
             let criteria: Vec<Criteria> = Vec::new();
             return Statement {
-                st_type,
+                category,
                 text,
-                nouns,
+                objectnames,
                 verbs,
                 criteria,
             };
@@ -274,10 +272,10 @@ pub mod statements {
             return Statement::new("");
         }
         pub fn sttype(&self) -> StatementCategory {
-            return self.st_type.clone();
+            return self.category.clone();
         }
-        pub fn get_nouns(&self) -> Vec<String> {
-            return self.nouns.clone();
+        pub fn get_objectnames(&self) -> Vec<String> {
+            return self.objectnames.clone();
         }
         pub fn get(&self, s: &str) {
             //return property
@@ -296,13 +294,13 @@ pub mod statements {
                 let stcat = StatementCategory::from(token);
                 if stcat != StatementCategory::UNRECOGNIZED {
                     self.verbs.push(String::from(token));
-                    self.st_type = stcat;
+                    self.category = stcat;
                     continue;
                 }
 
                 if token.contains("@") {
                     // @noun
-                    self.nouns = token.replace("@", "").split("::").map(|e| String::from(e)).collect();
+                    self.objectnames = token.replace("@", "").split("::").map(|e| String::from(e)).collect();
                     continue;
                 }
                 if token.contains("[") {
@@ -322,7 +320,7 @@ pub mod statements {
                 return PrepareResult::UnrecognizedStatement;
             }
 
-            return match self.st_type {
+            return match self.category {
                 StatementCategory::UNRECOGNIZED => PrepareResult::UnrecognizedStatement,
                 _ => PrepareResult::SUCCESS,
             };
@@ -334,7 +332,7 @@ pub mod statements {
         }
 
         pub fn add_noun(&mut self, s: String) {
-            self.nouns.push(s);
+            self.objectnames.push(s);
         }
 
         pub fn add_crit(&mut self, c: Criteria) {
@@ -342,7 +340,7 @@ pub mod statements {
         }
 
         pub fn set_category(&mut self, s: StatementCategory) {
-            self.st_type = s;
+            self.category = s;
         }
 
         pub fn prepare2(&mut self) -> PrepareResult {
@@ -357,7 +355,7 @@ pub mod statements {
                 return PrepareResult::UnrecognizedStatement;
             }
 
-            return match self.st_type {
+            return match self.category {
                 StatementCategory::UNRECOGNIZED => PrepareResult::UnrecognizedStatement,
                 _ => PrepareResult::SUCCESS,
             };

@@ -234,22 +234,22 @@ pub mod token {
 
                     match token {
                         PrimaryExpression::AddNamespace(s) => {
-                            emsta.set_category(StatementCategory::DDL(DDLTypes::CreateNamespace));
+                            emsta.set_category(StatementCategory::DDL(DDLTypes::AddNamespace));
                             emsta.add_verb(s.to_string());
                         }
                         PrimaryExpression::AddTable(s) => {
-                            emsta.set_category(StatementCategory::DDL(DDLTypes::CreateTable));
+                            emsta.set_category(StatementCategory::DDL(DDLTypes::AddTable));
                             emsta.add_verb(s.to_string());
                         }
                         PrimaryExpression::Add(s) => {
                             println!("additio");
-                            emsta.set_category(StatementCategory::DML(DMLTypes::INSERT));
+                            emsta.set_category(StatementCategory::DML(DMLTypes::ADD));
                             emsta.add_verb(s.to_string());
                         }
 
                         PrimaryExpression::Read(s) => {
                             println!("readitio");
-                            emsta.set_category(StatementCategory::DML(DMLTypes::SELECT));
+                            emsta.set_category(StatementCategory::DML(DMLTypes::READ));
                             emsta.add_verb(s.to_string());
                         }
 
