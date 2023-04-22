@@ -1,4 +1,17 @@
 pub mod table {
+    use nom::{
+        branch::alt,
+        bytes,
+        bytes::complete::{is_not, tag, tag_no_case, take_till, take_until, take_while, take_while1},
+        character::complete::{self, char as ncchar, line_ending, multispace0, newline},
+        character::{is_alphabetic, is_newline, is_space},
+        combinator::{self, all_consuming, map, map_parser, opt, recognize},
+        error::context,
+        multi::separated_list1,
+        sequence::{delimited, pair, preceded, separated_pair, terminated, tuple},
+        IResult,
+    };
+
     use crate::{
         qrtlib::field_types::FieldTypes, qrtlib::statements::QueryResult, qrtlib::statements::Statement, qrtlib::Database,
     };
@@ -6,13 +19,13 @@ pub mod table {
     pub struct TableColumn {
         name: String,
         data_type: FieldTypes,
-        unique: bool,
     }
     impl TableColumn {
-        pub fn new(name: String, data_type: FieldTypes, unique: bool) -> Option<TableColumn> {
-            let taco = TableColumn { name, data_type, unique };
+        pub fn new(name: String, data_type: FieldTypes) -> Option<TableColumn> {
+            let taco = TableColumn { name, data_type };
             return Some(taco);
         }
+
         pub fn from(name: &str, ftype: &str) -> Option<TableColumn> {
             if name == "" {
                 return None;
@@ -21,7 +34,6 @@ pub mod table {
                 return Some(TableColumn {
                     name: String::from(name),
                     data_type,
-                    unique: false,
                 });
             } else {
                 return None;
@@ -29,10 +41,6 @@ pub mod table {
         }
         pub fn data_type_ref(&self) -> &FieldTypes {
             return &self.data_type;
-        }
-
-        pub fn set_unique(&mut self, v: bool) {
-            self.unique = v;
         }
 
         pub fn name(&self) -> String {
@@ -114,9 +122,9 @@ pub mod table {
     }
     #[derive(Clone, PartialEq)]
     pub enum ConstraintTypes {
-        ColumnMatch,
         PrimaryKey,
         ForeignKey,
+        ColumnMatch,
         Unique,
         NoConstraint,
     }
@@ -376,7 +384,7 @@ pub mod table {
                     return None;
                 }
                 let data_type = data_t.unwrap();
-                if let Some(tf) = TableColumn::new(String::from(name), data_type, false) {
+                if let Some(tf) = TableColumn::new(String::from(name), data_type) {
                     tablefields.push(tf);
                 } else {
                     return None;

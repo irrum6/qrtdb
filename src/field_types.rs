@@ -70,18 +70,19 @@ pub mod field_types {
     impl FieldTypes {
         pub fn from(fieldname: &str) -> Option<FieldTypes> {
             return match fieldname {
-                "number" | "num" => Some(FieldTypes::Number(0.0)),
-                "integer" | "int" => Some(FieldTypes::Integer(0)),
-                "sigint" | "sig" => Some(FieldTypes::SignedInteger(0)),
-                "varchar" | "vchar" => {
+                "number" | "num" | "N" | "n" => Some(FieldTypes::Number(0.0)),
+                "integer" | "int" | "I" | "i" => Some(FieldTypes::Integer(0)),
+                "sigint" | "sig" | "S" | "s" => Some(FieldTypes::SignedInteger(0)),
+                // char is varchar by default
+                "varchar" | "vchar" | "var" | "char" | "C" | "c" => {
                     let vchar = Varchar::new(24, String::new());
                     Some(FieldTypes::Varchar(vchar))
                 }
-                "fxchar" | "fixchar" | "fchar" => {
+                "fxchar" | "fixchar" | "fchar" | "F" | "f" => {
                     let fchar = Fixedchar::new(24, String::new());
                     Some(FieldTypes::Fxchar(fchar))
                 }
-                "date" => Some(FieldTypes::Date(0)),
+                "date" | "D" | "d" => Some(FieldTypes::Date(0)),
                 _ => None,
             };
         }
@@ -164,7 +165,7 @@ pub mod field_types {
                 FieldTypes::Date(_) => String::from("date"),
             };
         }
-        
+
         pub fn to2(f: FieldTypes) -> String {
             return match f {
                 FieldTypes::Number(_) => String::from("num"),
@@ -175,7 +176,6 @@ pub mod field_types {
                 FieldTypes::Date(_) => String::from("date"),
             };
         }
-        
 
         pub fn tostr(f: &FieldTypes) -> String {
             return match f {
