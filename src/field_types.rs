@@ -70,15 +70,15 @@ pub mod field_types {
     impl FieldTypes {
         pub fn from(fieldname: &str) -> Option<FieldTypes> {
             return match fieldname {
-                "number" | "num" | "N" | "n" => Some(FieldTypes::Number(0.0)),
-                "integer" | "int" | "I" | "i" => Some(FieldTypes::Integer(0)),
-                "sigint" | "sig" | "S" | "s" => Some(FieldTypes::SignedInteger(0)),
+                "number" | "num" | "n" => Some(FieldTypes::Number(0.0)),
+                "integer" | "int" | "i" => Some(FieldTypes::Integer(0)),
+                "sigint" | "sig" | "s" => Some(FieldTypes::SignedInteger(0)),
                 // char is varchar by default
-                "varchar" | "vchar" | "var" | "char" | "C" | "c" => {
+                "varchar" | "vchar" | "var" | "char" | "c" => {
                     let vchar = Varchar::new(24, String::new());
                     Some(FieldTypes::Varchar(vchar))
                 }
-                "fxchar" | "fixchar" | "fchar" | "F" | "f" => {
+                "fxchar" | "fixchar" | "fchar" | "fixed" | "fx" | "f" => {
                     let fchar = Fixedchar::new(24, String::new());
                     Some(FieldTypes::Fxchar(fchar))
                 }
