@@ -88,7 +88,7 @@ pub mod field_types {
         }
 
         pub fn create_with_value(fieldname: &str, value: &str) -> Option<FieldTypes> {
-            //  n i s v f d
+            //  n i s c f d
             return match fieldname {
                 "number" | "num" => {
                     let x: f64 = value.parse().unwrap();

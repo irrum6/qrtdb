@@ -280,6 +280,11 @@ pub mod statements {
         pub fn get(&self, s: &str) {
             //return property
         }
+
+        pub fn get_verbs_ref(&self)->&str{
+            return &self.verbs[0];
+        }
+
         pub fn get_crit(&self) -> Vec<Criteria> {
             return self.criteria.clone();
         }

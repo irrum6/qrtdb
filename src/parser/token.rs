@@ -16,11 +16,7 @@ pub mod token {
         io::{Error as IOError, Read},
     };
 
-    use crate::qrtlib::{self};
-
-    // use crate::qrtlib::stmnt2;
-
-    use crate::qrtlib::statements::{DDLTypes, DMLTypes, PrepareResult, Statement, StatementCategory};
+    use crate::qrtlib::statements::{DDLTypes, DMLTypes, PrepareResult, QueryResult, Statement, StatementCategory};
 
     use crate::qrtlib::Database4;
 
@@ -218,9 +214,7 @@ pub mod token {
     //     )(input)
     // }
 
-    fn ok_content(){
-
-    }
+    fn ok_content() {}
     fn process_content(input: &str) -> Statement {
         let mut emsta = Statement::empty();
         let mut proc_input = input;
@@ -364,10 +358,19 @@ pub mod token {
                     PrepareResult::UnrecognizedStatement => {
                         println!("read2::process_statement > Some of the statements failed, aborting");
                         break;
-                    }
+                    }                    
                     PrepareResult::SUCCESS => {
+                        // let text = &st.get_verbs_ref().to_owned();
                         // execute staments
-                        db.execute(st);
+                        match db.execute(st) {
+                            QueryResult::SUCCESS => {
+                                // println!("{}",text);
+                                println!("suffering")
+                            }
+                            QueryResult::FAILURE => {
+                                println!("from no success")
+                            }
+                        }
                     }
                 };
             }
@@ -375,5 +378,4 @@ pub mod token {
 
         return Ok(String::from("success"));
     }
-
 }

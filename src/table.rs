@@ -26,6 +26,23 @@ pub mod table {
             return Some(taco);
         }
 
+        pub fn new2(name: String, data_type: FieldTypes) -> TableColumn {
+            return TableColumn { name, data_type };
+        }
+
+        pub fn from_text(input: &str) -> Option<TableColumn> {
+            if input.is_empty() {
+                return None;
+            }
+            let split: Vec<&str> = input.split(" ").collect();
+
+            if split.len() < 2 {
+                println!("no type was provided for column");
+                return None;
+            }
+            return TableColumn::from(split[0], split[1]);
+        }
+
         pub fn from(name: &str, ftype: &str) -> Option<TableColumn> {
             if name == "" {
                 return None;
@@ -131,10 +148,10 @@ pub mod table {
     impl ConstraintTypes {
         pub fn from(ctype: &str) -> ConstraintTypes {
             return match ctype {
-                "=m>" | "m" => ConstraintTypes::ColumnMatch,
-                "=p>" | "pk" | "p" => ConstraintTypes::PrimaryKey,
-                "=f>" | "=fk>" | "fk" | "f" => ConstraintTypes::ForeignKey,
-                "=u>" | "uq" | "u" => ConstraintTypes::Unique,
+                "matches" | "ma" | "m" => ConstraintTypes::ColumnMatch,
+                "primary" | "pk" | "p" => ConstraintTypes::PrimaryKey,
+                "foreign" | "fk" | "f" => ConstraintTypes::ForeignKey,
+                "unique" | "uq" | "u" => ConstraintTypes::Unique,
                 "==>" => ConstraintTypes::NoConstraint,
                 _ => ConstraintTypes::NoConstraint,
             };
@@ -192,6 +209,52 @@ pub mod table {
 
         pub fn refcol(&self) -> &String {
             return &&self.ref_column;
+        }
+
+        pub fn ct_from(token: &str) -> Option<Constraint> {
+            if token.is_empty() {
+                return None;
+            }
+            // println!("{} {}", col, token);
+            let split: Vec<String> = token.trim().split(" ").map(|e| String::from(e)).collect();
+
+            if split.len() < 2 {
+                return None;
+            }
+
+            let column = split[0].clone();
+            let ctype = ConstraintTypes::from(&split[1]);
+
+            match ctype {
+                ConstraintTypes::Unique | ConstraintTypes::PrimaryKey => {
+                    return Some(Constraint {
+                        ctype,
+                        column,
+                        ref_table: String::new(),
+                        ref_column: String::new(),
+                    });
+                }
+                ConstraintTypes::NoConstraint => {
+                    //and then will ignore it
+                    return None;
+                }
+                ConstraintTypes::ForeignKey | ConstraintTypes::ColumnMatch => {
+                    if split.len() < 3 {
+                        println!("bad reference");
+                        return None;
+                    }
+                    let references: Vec<String> = split[2].split(".").map(|e| String::from(e)).collect();
+                    let ref_table = references[0].clone();
+                    let ref_column = references[1].clone();
+
+                    return Some(Constraint {
+                        ctype,
+                        column,
+                        ref_table,
+                        ref_column,
+                    });
+                }
+            }
         }
 
         pub fn from_token(col: &str, token: &str) -> Option<Constraint> {
@@ -301,6 +364,45 @@ pub mod table {
         pub fn get_column_name(&self, index: usize) -> String {
             return self.head[index].clone();
         }
+
+        /**
+         *
+         */
+        pub fn build_from_text(create_text: String, namespace: &str, db: &Database) -> Option<Table> {
+            let split: Vec<String> = create_text.trim().split("|").map(|e| String::from(e)).collect();
+
+            if split.len() < 2 {
+                println!("not enuff");
+                return None;
+            }
+            let name = split[0].clone();
+            let fields: Vec<String> = split[1].split(",").map(|e| String::from(e)).collect();
+
+            if split.len() > 2 {
+                let constraints: Vec<String> = split[1].split(",").map(|e| String::from(e)).collect();
+            }
+            let mut tablefields: Vec<TableColumn> = Vec::new();
+
+            let idcol = TableColumn::new2(String::from("id"), FieldTypes::Integer(1));
+            tablefields.push(idcol);
+            let full_table_name = Database::compose_table_name(namespace, &name);
+
+            for f in fields {
+                let tc = TableColumn::from_text(&f);
+                if tc.is_none() {
+                    println!("one of the columns is not described properly");
+                    return None;
+                }
+                let col = tc.unwrap();
+                tablefields.push(col);
+            }
+            let mut cst: Vec<Constraint> = Vec::new();
+
+            // return None;
+            let table = Table::new(full_table_name.as_str(), tablefields, cst);
+            return Some(table);
+        }
+
         pub fn build_from_statement(create_text: String, namespace: &str, db: &Database) -> Option<Table> {
             // Table
             let replaced = create_text.trim().replace("#T", "").replace("T#", "");

@@ -159,7 +159,7 @@ pub mod database {
             }
             let create_text = s.verbs[0].clone();
 
-            if let Some(table) = Table::build_from_statement(create_text, namespace, &self) {
+            if let Some(table) = Table::build_from_text(create_text, namespace, &self) {
                 self.table_indexes.insert(table.tname(), self.tindex);
                 self.tables.push(table);
                 self.tindex += 1;
