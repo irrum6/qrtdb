@@ -223,6 +223,7 @@ pub mod table {
             }
 
             let column = split[0].clone();
+
             let ctype = ConstraintTypes::from(&split[1]);
 
             match ctype {
@@ -365,6 +366,14 @@ pub mod table {
             return self.head[index].clone();
         }
 
+        pub fn get_column_type_ref(&self, index: usize) -> &FieldTypes {
+            return self.columns[index].data_type_ref();
+        }
+
+        pub fn get_column_type(&self, index: usize) -> FieldTypes {
+            return self.columns[index].typef();
+        }
+
         /**
          *
          */
@@ -375,12 +384,9 @@ pub mod table {
                 println!("not enuff");
                 return None;
             }
-            let name = split[0].clone();
+            let name = split[0].trim().clone();
             let fields: Vec<String> = split[1].split(",").map(|e| String::from(e)).collect();
 
-            if split.len() > 2 {
-                let constraints: Vec<String> = split[1].split(",").map(|e| String::from(e)).collect();
-            }
             let mut tablefields: Vec<TableColumn> = Vec::new();
 
             let idcol = TableColumn::new2(String::from("id"), FieldTypes::Integer(1));
@@ -396,10 +402,28 @@ pub mod table {
                 let col = tc.unwrap();
                 tablefields.push(col);
             }
-            let mut cst: Vec<Constraint> = Vec::new();
+
+            let cst: Vec<Constraint> = Vec::new();
+
+            let mut table = Table::new(full_table_name.as_str(), tablefields, cst);
+
+            if split.len() > 2 {
+                let constraints: Vec<&str> = split[2].trim().split(",").collect();
+
+                for cons in constraints {
+                    //new constraint
+                    let nc = Constraint::ct_from(cons);
+                    if nc.is_none() {
+                        continue;
+                    }
+                    //ha ha beat it
+                    let nc = nc.unwrap();
+                    table.add_constraint(nc, db);
+                }
+            }
 
             // return None;
-            let table = Table::new(full_table_name.as_str(), tablefields, cst);
+
             return Some(table);
         }
 
@@ -498,7 +522,30 @@ pub mod table {
             return Some(table);
         }
 
-        pub fn add_constraint(&mut self) {}
+        pub fn add_constraint(&mut self, necot: Constraint, db: &Database) {
+            let index = self.get_column_index(&necot.col());
+            if index.is_none() {
+                println!("name not found in table head, column for specified construct to be constructed is not found");
+                println!("contstraint statement will be ignored and not constructed");
+                return;
+            }
+            let index = index.unwrap();
+
+            match necot.ct() {
+                // for column match and foreign keys check existence of the table referenced
+                ConstraintTypes::ColumnMatch | ConstraintTypes::ForeignKey => {
+                    let ftype = FieldTypes::to2(self.get_column_type(index));
+                    let valid = db.check_column_referenced(&necot, ftype);
+                    if !valid {
+                        return;
+                    }
+                    self.constraints.push(necot);
+                }
+                ConstraintTypes::PrimaryKey => {}
+                ConstraintTypes::Unique => {}
+                _ => {}
+            }
+        }
         pub fn remove_constraint(&mut self) {}
 
         pub fn add_relative(&mut self, s: String) {
