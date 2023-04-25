@@ -202,19 +202,6 @@ pub mod token {
         alt((is_noun, parse_id, criteria, limit))(input)
     }
 
-    // fn whole_statement(input: &str) -> IResult<&str, PrimaryExpression> {
-    //     //whoah i get it now
-    //     //but it doesn't work
-    //     terminated(
-    //         // tuple((alt((is_dml, is_ddl)), parse_id)),
-    //         //spaces
-    //         delimited(multispace0, alt((is_dml, is_ddl)), multispace0),
-    //         ncchar(';'),
-    //         // tag(";")
-    //     )(input)
-    // }
-
-    fn ok_content() {}
     fn process_content(input: &str) -> Statement {
         let mut emsta = Statement::empty();
         let mut proc_input = input;

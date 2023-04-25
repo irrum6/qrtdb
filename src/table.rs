@@ -1,16 +1,16 @@
 pub mod table {
-    use nom::{
-        branch::alt,
-        bytes,
-        bytes::complete::{is_not, tag, tag_no_case, take_till, take_until, take_while, take_while1},
-        character::complete::{self, char as ncchar, line_ending, multispace0, newline},
-        character::{is_alphabetic, is_newline, is_space},
-        combinator::{self, all_consuming, map, map_parser, opt, recognize},
-        error::context,
-        multi::separated_list1,
-        sequence::{delimited, pair, preceded, separated_pair, terminated, tuple},
-        IResult,
-    };
+    // use nom::{
+    //     branch::alt,
+    //     bytes,
+    //     bytes::complete::{is_not, tag, tag_no_case, take_till, take_until, take_while, take_while1},
+    //     character::complete::{self, char as ncchar, line_ending, multispace0, newline},
+    //     character::{is_alphabetic, is_newline, is_space},
+    //     combinator::{self, all_consuming, map, map_parser, opt, recognize},
+    //     error::context,
+    //     multi::separated_list1,
+    //     sequence::{delimited, pair, preceded, separated_pair, terminated, tuple},
+    //     IResult,
+    // };
 
     use crate::{
         qrtlib::field_types::FieldTypes, qrtlib::statements::QueryResult, qrtlib::statements::Statement, qrtlib::Database,
@@ -195,12 +195,24 @@ pub mod table {
                 ref_column,
             };
         }
+        pub fn construct_primary_key(name:&str)->Constraint{
+            return Constraint{
+                ctype:ConstraintTypes::PrimaryKey,
+                column:String::from(name),
+                ref_table:String::new(),
+                ref_column:String::new(),
+            }
+        }
         pub fn ct(&self) -> ConstraintTypes {
             return self.ctype.clone();
         }
 
         pub fn col(&self) -> String {
             return self.column.clone();
+        }
+
+        pub fn col_as_ref(&self) -> &String {
+            return &self.column;
         }
 
         pub fn refta(&self) -> &String {
@@ -403,7 +415,11 @@ pub mod table {
                 tablefields.push(col);
             }
 
-            let cst: Vec<Constraint> = Vec::new();
+            let mut cst: Vec<Constraint> = Vec::new();
+
+            let idpk = Constraint::construct_primary_key("id");
+
+            cst.push(idpk);
 
             let mut table = Table::new(full_table_name.as_str(), tablefields, cst);
 
@@ -533,7 +549,7 @@ pub mod table {
 
             match necot.ct() {
                 // for column match and foreign keys check existence of the table referenced
-                ConstraintTypes::ColumnMatch | ConstraintTypes::ForeignKey => {
+                ConstraintTypes::ColumnMatch => {
                     let ftype = FieldTypes::to2(self.get_column_type(index));
                     let valid = db.check_column_referenced(&necot, ftype);
                     if !valid {
@@ -541,12 +557,30 @@ pub mod table {
                     }
                     self.constraints.push(necot);
                 }
-                ConstraintTypes::PrimaryKey => {}
-                ConstraintTypes::Unique => {}
+                ConstraintTypes::ForeignKey => {
+                    let ftype = FieldTypes::to2(self.get_column_type(index));
+                    let valid = db.check_column_referenced(&necot, ftype);
+                    if !valid {
+                        return;
+                    }
+                    self.constraints.push(necot);
+                }
+                ConstraintTypes::PrimaryKey => {
+                    //overwrite :remove older primary keys
+                    //and set this one instead
+                    self.constraints.retain(|x| x.ct() != ConstraintTypes::PrimaryKey);
+                    self.constraints.push(necot);
+                }
+                ConstraintTypes::Unique => {
+                    self.constraints.push(necot);
+                }
                 _ => {}
             }
         }
-        pub fn remove_constraint(&mut self) {}
+        pub fn remove_constraint(&mut self, colname: &str, cont: ConstraintTypes) {
+            //upsolute
+            self.constraints.retain(|x| x.col_as_ref() != colname && x.ct() != cont);
+        }
 
         pub fn add_relative(&mut self, s: String) {
             self.relatives.push(s);
@@ -605,9 +639,9 @@ pub mod table {
             return QueryResult::SUCCESS;
         }
 
-        pub fn insert(&mut self, s: Statement, db: &mut Database) -> QueryResult {
-            return QueryResult::SUCCESS;
-        }
+        // pub fn insert(&mut self, s: Statement, db: &mut Database) -> QueryResult {
+        //     return QueryResult::SUCCESS;
+        // }
         pub fn insert_record(&mut self, r: Record) {
             self.records.push(r);
         }

@@ -148,8 +148,25 @@ pub mod database {
                 println!("Column referenced is not found");
                 return false;
             }
-            let exists = true;
-            return exists;
+            match cs.ct() {
+                ConstraintTypes::ForeignKey => {
+                    let constras = self.tables[*table_index as usize].get_constraints_referenced();
+
+                    for c in constras {
+                        if c.ct() == ConstraintTypes::PrimaryKey && c.col_as_ref() == cs.col_as_ref() {
+                            return true;
+                        }
+                    }
+                    // return self.check_pk(cs, ftype);
+                    return false;
+                }
+                ConstraintTypes::ColumnMatch => {
+                    return true;
+                }
+                _ => {
+                    return false;
+                }
+            }
         }
         pub fn create_table(&mut self, s: Statement, namespace: &str) -> QueryResult {
             //process statements
