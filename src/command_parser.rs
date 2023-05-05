@@ -15,7 +15,7 @@ pub mod command_parser {
                 ".help" | ".HELP" | ".H" | ".h" => MetaCommands::HELP,
                 ".tables" | ".TABLES" | ".T" | ".t" | ".ls" => MetaCommands::TABLES,
                 ".rex" | ".REX" | ".RX" | ".rx" => MetaCommands::ReadAndExecute,
-                ".par" | ".nup" | ".np" => MetaCommands::NewParser,
+                ".par" | ".nup" | ".np" | ".rax" => MetaCommands::NewParser,
                 //ls databases
                 //in base
                 //ls namespacs

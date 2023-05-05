@@ -328,10 +328,7 @@ pub mod db4 {
                 MetaCommands::HELP => Database4::help(),
                 MetaCommands::TABLES => self.ls(&s),
                 MetaCommands::ReadAndExecute => {
-                    let result = self.read_and_execute(&s);
-                    if result.is_err() {
-                        println!("error occured executings script file");
-                    }
+                    // 
                 }
                 MetaCommands::UnrecognizedCommand => {
                     println!("Unrecognized meta command")
