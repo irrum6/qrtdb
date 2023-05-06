@@ -211,7 +211,6 @@ pub mod token {
             let mut exit = false;
             match prexp(&proc_input) {
                 Ok((rem, token)) => {
-                    println!("parsed {:?}", token);
 
                     match token {
                         PrimaryExpression::AddNamespace(s) => {
@@ -223,19 +222,16 @@ pub mod token {
                             emsta.add_verb(s.to_string());
                         }
                         PrimaryExpression::Add(s) => {
-                            println!("additio");
                             emsta.set_category(StatementCategory::DML(DMLTypes::ADD));
                             emsta.add_verb(s.to_string());
                         }
 
                         PrimaryExpression::Read(s) => {
-                            println!("readitio");
                             emsta.set_category(StatementCategory::DML(DMLTypes::READ));
                             emsta.add_verb(s.to_string());
                         }
 
                         PrimaryExpression::ObjectId(s) => {
-                            println!("object");
                             //need to split here
                             let strabons = s.split("::");
                             for s in strabons {
@@ -246,8 +242,7 @@ pub mod token {
                             println!("Other expression");
                         }
                     }
-                    println!("------");
-                    println!("remaining {}", rem);
+                    
                     if rem.is_empty() {
                         break;
                     }
@@ -303,9 +298,9 @@ pub mod token {
             let mut exit = false;
             match whole_statement2(&proc_input) {
                 Ok((rem, token)) => {
-                    println!("parsed {:?}", token);
-                    println!("------");
-                    println!("remaining {}", rem);
+                    // println!("parsed {:?}", token);
+                    // println!("------");
+                    // println!("remaining {}", rem);
                     if rem.is_empty() {
                         break;
                     }
@@ -351,7 +346,6 @@ pub mod token {
                         // execute staments
                         match db.execute(st) {
                             QueryResult::SUCCESS => {
-                                // println!("{}",text);
                                 println!("suffering")
                             }
                             QueryResult::FAILURE => {

@@ -92,15 +92,12 @@ pub mod database {
             return tname;
         }
         pub fn search_for_value_in_table(&self, tablename: &String, name: String, value: String) -> bool {
-            println!("{}", tablename);
             let binding = tablename.replace("@", "");
             let split: Vec<&str> = binding.split("::").collect();
 
             let mut tablename_parsed: String = String::from(split[1]);
             tablename_parsed.push_str("_");
             tablename_parsed.push_str(split[2]);
-
-            println!("97:{}", &tablename_parsed);
 
             let index = self.table_indexes.get(&tablename_parsed);
             if index.is_none() {
@@ -111,15 +108,12 @@ pub mod database {
             return self.tables[*table_index as usize].search_for_value(name, value);
         }
         pub fn check_column_referenced(&self, cs: &Constraint, ftype: String) -> bool {
-            println!("{}", cs.ref_table.clone());
             let binding = cs.ref_table.clone().replace("@", "");
             let split: Vec<&str> = binding.split("::").collect();
 
             let mut tablename_parsed: String = String::from(split[1]);
             tablename_parsed.push_str("_");
             tablename_parsed.push_str(split[2]);
-
-            println!("115:{}", &tablename_parsed);
 
             let index = self.table_indexes.get(&tablename_parsed);
 
@@ -135,8 +129,6 @@ pub mod database {
                     continue;
                 }
                 found = true;
-                // println!("{} {}",f.typef(),&ftype);
-                // let ft = FieldTypes::from(&ftype);
                 //not necessarily great solution
                 if FieldTypes::to2(f.typef()) != ftype {
                     println!("Column referenced has different type");
@@ -264,7 +256,6 @@ pub mod database {
         }
 
         pub fn insert(&mut self, tablename: String, s: Statement) -> QueryResult {
-            // println!("{}", tablename);
             let table_index = self.table_indexes.get(&tablename);
             if table_index.is_none() {
                 println!("no tables were found with such name");
@@ -312,7 +303,6 @@ pub mod database {
             // return self.tables[*table_index as usize].insert(s, &mut self);
         }
         pub fn select(&mut self, tablename: String, s: Statement) -> QueryResult {
-            // println!("{}", tablename);
             if let Some(table_index) = self.table_indexes.get(&tablename) {
                 return self.tables[*table_index as usize].select(s);
             } else {

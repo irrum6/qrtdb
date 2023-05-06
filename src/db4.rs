@@ -220,7 +220,6 @@ pub mod db4 {
         }
 
         pub fn execute(&mut self, s: Statement) -> QueryResult {
-            // println!("xct");
             // identify table
             let objectnames = s.get_objectnames();
             if objectnames.len() == 0 {
@@ -247,7 +246,6 @@ pub mod db4 {
 
         pub fn process_statement(&mut self, line: &String) {
             let statements: Vec<&str> = line.trim().split(";").collect();
-            println!("{:?}", statements);
             // return;
             for stmt in statements {
                 if stmt.len() == 0 {

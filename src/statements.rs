@@ -20,12 +20,8 @@ pub mod statements {
                 return DDLTypes::NotADDL;
             }
             // let s = String::from(token);
-            println!("{}", token);
             let start = &token[..2];
             let end = &token[token.len() - 2..token.len()];
-
-            println!("{}", start);
-            println!("{}", end);
 
             // ignore before better parser
             if String::from(start) != end.chars().rev().collect::<String>() {
@@ -290,7 +286,6 @@ pub mod statements {
         }
         pub fn prepare(&mut self) -> PrepareResult {
             let tokens: Vec<&str> = self.text.trim().split(" ").collect();
-            // println!("{:?}", tokens);
 
             for token in tokens {
                 if token.len() == 0 {

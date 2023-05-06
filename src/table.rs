@@ -227,7 +227,7 @@ pub mod table {
             if token.is_empty() {
                 return None;
             }
-            // println!("{} {}", col, token);
+
             let split: Vec<String> = token.trim().split(" ").map(|e| String::from(e)).collect();
 
             if split.len() < 2 {
@@ -271,8 +271,6 @@ pub mod table {
         }
 
         pub fn from_token(col: &str, token: &str) -> Option<Constraint> {
-            println!("{} {}", col, token);
-
             let mut pat = "";
 
             if token.contains("=u>") {
@@ -650,8 +648,6 @@ pub mod table {
             let fields: Vec<String> = selecttext.replace("$", "").split(",").map(|e| String::from(e)).collect();
 
             let crit = s.get_crit();
-            println!("{:?}", crit.len());
-            println!("{:?}", fields);
             println!("records:{}", &self.records.len());
 
             let mut indexes: Vec<usize> = Vec::new();

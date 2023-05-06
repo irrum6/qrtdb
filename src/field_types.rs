@@ -124,7 +124,6 @@ pub mod field_types {
          * we pass reference and construct new with new value
          */
         pub fn create_with_value_ta_(ft: &FieldTypes, value: &str) -> Option<FieldTypes> {
-            // println!("{} {}",FieldTypes::describe(ft),value);
             return match ft {
                 FieldTypes::Number(_) => {
                     let x: f64 = value.parse().unwrap();
