@@ -1,0 +1,3 @@
+@sys::other::studs $ id,pid,age=21,name $;
+
+@sys::other::studs $ id,pid,age>21,name $;

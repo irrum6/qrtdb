@@ -279,7 +279,9 @@ pub mod db4 {
                 }
             }
         }
-        pub fn help() {}
+        pub fn help() {
+            println!("type .rex with filename followed to execute query");            
+        }
         pub fn ls(&mut self, s: &String) {
             //over space
             let x: Vec<&str> = s.trim().split(" ").collect();
@@ -357,6 +359,7 @@ pub mod db4 {
 
         loop {
             println!("Hettooluykaa > ");
+            println!("type .help for help");
             stdin().read_line(&mut line).unwrap();
             // process line
             if line.contains(".") {

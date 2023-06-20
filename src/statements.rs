@@ -187,6 +187,9 @@ pub mod statements {
         pub fn new(clause: WhereClauses, pname: String, value: String) -> Criteria {
             return Criteria { clause, pname, value };
         }
+        pub fn public_from(token: String)->Option<Criteria>{
+            return  Criteria::from(token);
+        }
         fn from(token: String) -> Option<Criteria> {
             let mut pat = "";
             if token.contains("=") {

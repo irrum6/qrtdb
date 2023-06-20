@@ -13,7 +13,10 @@ pub mod table {
     // };
 
     use crate::{
-        qrtlib::field_types::FieldTypes, qrtlib::statements::QueryResult, qrtlib::statements::Statement, qrtlib::Database,
+        qrtlib::field_types::FieldTypes,
+        qrtlib::statements::Statement,
+        qrtlib::statements::{Criteria, QueryResult},
+        qrtlib::Database,
     };
     #[derive(Clone)]
     pub struct TableColumn {
@@ -195,13 +198,13 @@ pub mod table {
                 ref_column,
             };
         }
-        pub fn construct_primary_key(name:&str)->Constraint{
-            return Constraint{
-                ctype:ConstraintTypes::PrimaryKey,
-                column:String::from(name),
-                ref_table:String::new(),
-                ref_column:String::new(),
-            }
+        pub fn construct_primary_key(name: &str) -> Constraint {
+            return Constraint {
+                ctype: ConstraintTypes::PrimaryKey,
+                column: String::from(name),
+                ref_table: String::new(),
+                ref_column: String::new(),
+            };
         }
         pub fn ct(&self) -> ConstraintTypes {
             return self.ctype.clone();
@@ -647,13 +650,20 @@ pub mod table {
             let selecttext = s.verbs[0].clone();
             let fields: Vec<String> = selecttext.replace("$", "").split(",").map(|e| String::from(e)).collect();
 
-            let crit = s.get_crit();
+            let mut crit = s.get_crit();
             println!("records:{}", &self.records.len());
 
             let mut indexes: Vec<usize> = Vec::new();
             for f in fields {
                 if let Some(x) = self.get_column_index(&f) {
                     indexes.push(x);
+                }
+                if let Some(c) = Criteria::public_from(f) {
+                    let critfield = c.get_pname();
+                    crit.push(c);
+                    if let Some(x) = self.get_column_index(&critfield) {
+                        indexes.push(x);
+                    }
                 }
             }
             for r in &self.records {
