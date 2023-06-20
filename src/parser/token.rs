@@ -16,7 +16,7 @@ pub mod token {
         io::{Error as IOError, Read},
     };
 
-    use crate::qrtlib::statements::{DDLTypes, DMLTypes, PrepareResult, QueryResult, Statement, StatementCategory};
+    use crate::qrtlib::statements::{Criteria, DDLTypes, DMLTypes, PrepareResult, QueryResult, Statement, StatementCategory};
 
     use crate::qrtlib::Database4;
 
@@ -176,11 +176,13 @@ pub mod token {
     fn criteria(input: &str) -> IResult<&str, PrimaryExpression> {
         combinator::map(
             tuple((
+                multispace0,
                 tag("["),
                 combinator::map(take_until("]"), |inner: &str| PrimaryExpression::Criteria(inner)),
                 tag("]"),
+                multispace0,
             )),
-            |x| x.1,
+            |x| x.2,
         )(input)
     }
 
@@ -211,7 +213,6 @@ pub mod token {
             let mut exit = false;
             match prexp(&proc_input) {
                 Ok((rem, token)) => {
-
                     match token {
                         PrimaryExpression::AddNamespace(s) => {
                             emsta.set_category(StatementCategory::DDL(DDLTypes::AddNamespace));
@@ -238,11 +239,18 @@ pub mod token {
                                 emsta.add_noun(s.to_string());
                             }
                         }
+                        PrimaryExpression::Criteria(s) => {
+                            let cr = Criteria::en_masse(s.to_string());
+                            // println!("gela {:?}", &cr);
+                            for c in cr {
+                                emsta.add_crit(c);
+                            }
+                        }
                         _ => {
                             println!("Other expression");
                         }
                     }
-                    
+
                     if rem.is_empty() {
                         break;
                     }
@@ -254,8 +262,7 @@ pub mod token {
                     continue;
                 }
                 Err(nom::Err::Error(ne)) => {
-                    println!("Nom error");
-                    println!("{:?}", ne);
+                    println!("Nom error {:?}", ne);
                     break;
                 }
                 Err(e) => {
@@ -340,7 +347,7 @@ pub mod token {
                     PrepareResult::UnrecognizedStatement => {
                         println!("read2::process_statement > Some of the statements failed, aborting");
                         break;
-                    }                    
+                    }
                     PrepareResult::SUCCESS => {
                         // let text = &st.get_verbs_ref().to_owned();
                         // execute staments

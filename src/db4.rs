@@ -326,13 +326,14 @@ pub mod db4 {
                 MetaCommands::HELP => Database4::help(),
                 MetaCommands::TABLES => self.ls(&s),
                 MetaCommands::ReadAndExecute => {
-                    // 
+                    //
+                    let _res = read2(s, self); 
                 }
                 MetaCommands::UnrecognizedCommand => {
                     println!("Unrecognized meta command")
                 }
                 MetaCommands::NewParser => {
-                    read2(s, self);
+                    let _res = read2(s, self);
                 }
             }
             return false;

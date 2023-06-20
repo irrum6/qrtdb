@@ -1,0 +1,30 @@
+#n other n# @sys ;
+
+#t studs|age i,pid i,name fx t# @sys::other ;
+
+# 19,1300,gela # @sys::other::studs ;
+# 20,1301,vaja # @sys::other::studs ;
+# 23,1304108,vaja # @sys::other::studs ;
+# 29,1304109,irakli # @sys::other::studs ;
+@sys::other::studs  # 21,1302,vaja #;
+
+$ id,pid,age,name $ @sys::other::studs ;
+
+# 21,1305,grigol # @sys::other::studs ;
+# 20,1306,vakhtang # @sys::other::studs ;
+@sys::other::studs  # 18,1307,Malkhaz #;
+@sys::other::studs  # 19,1308,Mikheil #;
+
+@sys::other::studs $ id,pid,age,name $;
+
+@sys::other::studs $ id,pid,age,name $ [age>21] ;
+
+#t exams|date d,pid int,name fx | name m @sys::other::studs.name t# @sys::other ;
+
+# 2023,1306,gela # @sys::other::exams ;
+# 2022,1301,vaja # @sys::other::exams ;
+# 2021,1302,grigol # @sys::other::exams ;
+# 2021,1402,grigal # @sys::other::exams ;
+
+
+$ id,pid,date,name $ @sys::other::exams ;

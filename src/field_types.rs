@@ -78,7 +78,7 @@ pub mod field_types {
                     let vchar = Varchar::new(24, String::new());
                     Some(FieldTypes::Varchar(vchar))
                 }
-                "fxchar" | "fixchar" | "fchar" | "fixed" | "fx" | "f" => {
+                "fxchar" | "fixchar" | "fchar" | "fixed" | "fix" | "fx" | "f" => {
                     let fchar = Fixedchar::new(24, String::new());
                     Some(FieldTypes::Fxchar(fchar))
                 }

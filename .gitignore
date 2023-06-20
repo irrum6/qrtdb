@@ -10,7 +10,5 @@ notes
 
 test*
 
-*.svepql
-*.svep
-
 .ignore
+.ignorex
