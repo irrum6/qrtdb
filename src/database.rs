@@ -168,7 +168,15 @@ pub mod database {
             }
             let create_text = s.verbs[0].clone();
 
+            //check if table exists
+
             if let Some(table) = Table::build_from_text(create_text, namespace, &self) {
+                //check if table exists
+                let table_index = self.table_indexes.get(&table.tname());
+                if table_index.is_some() {
+                    println!("table with such name already exists in within specified database and namespace");
+                    return QueryResult::FAILURE;
+                }
                 self.table_indexes.insert(table.tname(), self.tindex);
                 self.tables.push(table);
                 self.tindex += 1;
