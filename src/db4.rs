@@ -6,9 +6,12 @@ pub mod db4 {
         io::{self, Read},
     };
 
+    use qrtlib::identity::Name;
+
     use crate::{
+        qrtlib::context::{Context, ContextTypes, GlobalContext, QueryContext, SessionContext, UserContext},
         qrtlib::statements::{DDLTypes, DMLTypes, PrepareResult, QueryResult, Statement, StatementCategory},
-        qrtlib::{self, read2,whole_statement2, Database, MetaCommands},
+        qrtlib::{self, read2, whole_statement2, Database, MetaCommands},
     };
 
     // use crate::qrtlib::stmnt2;
@@ -20,6 +23,11 @@ pub mod db4 {
         database_indexes: HashMap<String, u64>,
         dbindex: u64,
         working_database_index: u64,
+        current_context: ContextTypes,
+        ctxq: QueryContext,
+        ctxs: SessionContext,
+        ctxg: GlobalContext,
+        ctxu: UserContext,
     }
 
     impl Database4 {
@@ -29,12 +37,62 @@ pub mod db4 {
             let database_indexes: HashMap<String, u64> = HashMap::new();
             let dbindex = 0;
             let working_database_index = 0;
+            let current_context = ContextTypes::QueryContext(QueryContext::new());
+            let ctxq = QueryContext::new();
+            let ctxs = SessionContext::new();
+            let ctxg = GlobalContext::new();
+            let ctxu = UserContext::new();
             return Database4 {
                 databases,
                 database_indexes,
                 dbindex,
                 working_database_index,
+                current_context,
+                ctxq,
+                ctxs,
+                ctxg,
+                ctxu,
             };
+        }
+
+        fn set_context(&mut self, ctx: ContextTypes) {
+            self.current_context = ctx;
+        }
+
+        fn assign_variable(&mut self, n: String, v: String) {
+            // &self.current_context.get_variable_value();
+            match &self.current_context {
+                ContextTypes::GlobalContext(_) => {
+                    self.ctxg.set_variable_value(n, v);
+                }
+                ContextTypes::UserContext(_) => {
+                    self.ctxu.set_variable_value(n, v);
+                }
+                ContextTypes::SessionContext(_) => {
+                    self.ctxs.set_variable_value(n, v);
+                }
+                ContextTypes::QueryContext(_) => {
+                    self.ctxq.set_variable_value(n, v);
+                }
+            }
+        }
+
+        fn create_alias(&mut self, alias: String, name: Name) {
+            // &self.current_context.get_variable_value();
+            match &self.current_context {
+                ContextTypes::GlobalContext(_) => {
+                    self.ctxg.set_alias_value(alias, name);
+                }
+                ContextTypes::UserContext(_) => {
+                    self.ctxu.set_alias_value(alias, name);
+                }
+                ContextTypes::SessionContext(_) => {
+                    self.ctxs.set_alias_value(alias, name);
+                }
+                ContextTypes::QueryContext(_) => {
+                    self.ctxq.set_alias_value(alias, name);
+                }
+            }
         }
 
         fn create_database(&mut self, name: &str) -> QueryResult {
@@ -174,11 +232,36 @@ pub mod db4 {
 
                 tablename_full = Database::compose_table_name(&namespace, &tablename);
             } else {
+                //if is one.
                 tablename = objectnames[0].clone();
                 dab_index = self.working_database_index;
                 namespace = self.databases[dab_index as usize].get_namespace();
 
                 tablename_full = Database::compose_table_name(&namespace, &tablename);
+
+                //rough patch
+                if tablename.starts_with("?") {
+                    let alias = tablename.replace("?", "");
+                    let full_name = self.ctxq.get_alias_value(alias);
+
+                    if full_name.1 == false {
+                        println!("could not resolve alias");
+                        return Some(QueryResult::FAILURE);
+                    }
+                    let name = full_name.0;
+
+                    dbname = name.get_database();
+                    namespace = name.get_namespace();
+                    tablename = name.get_tablename();
+
+                    if let Some(db_index) = self.database_indexes.get(&dbname) {
+                        tablename_full = Database::compose_table_name(&namespace, &tablename);
+                        dab_index = *db_index;
+                    } else {
+                        println!("no database were found with such name");
+                        return Some(QueryResult::FAILURE);
+                    };
+                }
             }
             match s.sttype() {
                 StatementCategory::DML(DMLTypes::ADD) => {
@@ -222,7 +305,13 @@ pub mod db4 {
         pub fn execute(&mut self, s: Statement) -> QueryResult {
             // identify table
             let objectnames = s.get_objectnames();
-            if objectnames.len() == 0 {
+            let mut objname_excludes = false;
+
+            if StatementCategory::is_variable(&s.sttype()) || StatementCategory::is_alias(&s.sttype()) {
+                objname_excludes = true;
+            }
+            if objectnames.len() == 0 && !objname_excludes {
+                //here
                 println!("no ids were provided");
                 return QueryResult::FAILURE;
             }
@@ -238,7 +327,12 @@ pub mod db4 {
                         return qres;
                     }
                 }
-
+                StatementCategory::VariableAssignment(va) => self.assign_variable(va.nameget(), va.valueget()),
+                StatementCategory::AliasDeclaration(ad) => {
+                    self.create_alias(ad.nameget(), ad.valueget());
+                    //needs working
+                    // println!("alias detected {} {}", ad.nameget(), ad.valueget().get_namespace());
+                }
                 _ => {}
             }
             return QueryResult::FAILURE;
@@ -265,7 +359,7 @@ pub mod db4 {
                 };
             }
         }
-        pub fn process_statement2(&mut self, line: &String){
+        pub fn process_statement2(&mut self, line: &String) {
             match whole_statement2(&line) {
                 Ok((rem, stmt)) => {
                     self.execute(stmt);
@@ -280,7 +374,7 @@ pub mod db4 {
             }
         }
         pub fn help() {
-            println!("type .rex with filename followed to execute query");            
+            println!("type .rex with filename followed to execute query");
         }
         pub fn ls(&mut self, s: &String) {
             //over space
@@ -329,7 +423,7 @@ pub mod db4 {
                 MetaCommands::TABLES => self.ls(&s),
                 MetaCommands::ReadAndExecute => {
                     //
-                    let _res = read2(s, self); 
+                    let _res = read2(s, self);
                 }
                 MetaCommands::UnrecognizedCommand => {
                     println!("Unrecognized meta command")
@@ -370,7 +464,7 @@ pub mod db4 {
                 continue;
             }
             // db4.process_statement(&line);
-            db4.process_statement2(&line);            
+            db4.process_statement2(&line);
             line.truncate(0);
         }
     }

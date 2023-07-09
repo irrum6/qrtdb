@@ -1,0 +1,2 @@
+studes = @sys::other::studs ;
+@?studes $ id,pid,age>21,name $;

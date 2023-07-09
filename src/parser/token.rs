@@ -16,8 +16,12 @@ pub mod token {
         io::{Error as IOError, Read},
     };
 
-    use crate::qrtlib::statements::{Criteria, DDLTypes, DMLTypes, PrepareResult, QueryResult, Statement, StatementCategory};
+    use crate::qrtlib::statements::{
+        AliasDeclaration, Criteria, DDLTypes, DMLTypes, PrepareResult, QueryResult, Statement, StatementCategory,
+        VariableAssignment,
+    };
 
+    use crate::qrtlib::identity::Name;
     use crate::qrtlib::Database4;
 
     #[derive(Debug, PartialEq, Eq)]
@@ -54,6 +58,9 @@ pub mod token {
         RemoveTable(&'a str),
         // \!table!
         RemoveTable2(&'a str),
+        Alias(&'a str),
+        VariableName(&'a str),
+        Value(&'a str),
         Text(&'a str),
     }
 
@@ -67,6 +74,48 @@ pub mod token {
                 combinator::map(take_until(" "), |inner: &str| PrimaryExpression::ObjectId(inner)),
             )),
             |x| x.2,
+        )(input)
+    }
+
+    //return statement like -> read_till_semicolon
+    fn variables(input: &str) -> IResult<&str, Statement> {
+        return combinator::map(
+            tuple((
+                // eat space
+                multispace0,
+                combinator::map(take_until(" "), |inner: &str| String::from(inner)),
+                multispace0,
+                tag("="),
+                multispace0,
+                combinator::map(take_until(" "), |inner: &str| String::from(inner)),
+                multispace0,
+                tag(";"),
+            )),
+            |x| Statement::fromcat(StatementCategory::VariableAssignment(VariableAssignment::new(x.1, x.5))),
+        )(input);
+    }
+
+    fn alias(input: &str) -> IResult<&str, Statement> {
+        combinator::map(
+            tuple((
+                // eat space
+                multispace0,
+                combinator::map(take_until(" "), |inner: &str| String::from(inner)),
+                multispace0,
+                tag("="),
+                multispace0,
+                //parse_id,
+                tag("@"),
+                combinator::map(take_until(" "), |inner: &str| String::from(inner)),
+                multispace0,
+                tag(";"),
+            )),
+            |x| {
+                Statement::fromcat(StatementCategory::AliasDeclaration(AliasDeclaration::new(
+                    x.1,
+                    Name::new2(x.6),
+                )))
+            },
         )(input)
     }
 
@@ -277,10 +326,12 @@ pub mod token {
     fn read_till_semicolon(input: &str) -> IResult<&str, Statement> {
         combinator::map(
             tuple((
+                multispace0,
                 combinator::map(take_until(";"), |inner: &str| process_content(inner)),
                 tag(";"),
+                multispace0,
             )),
-            |x| x.0,
+            |x| x.1,
         )(input)
     }
     //Vec<stmnt2::Statement>
@@ -293,7 +344,7 @@ pub mod token {
         //     )),
         //     |x| x.1,
         // )(input)
-        preceded(multispace0, read_till_semicolon)(input)
+        alt((alias,variables, read_till_semicolon))(input)
     }
 
     fn process3(input: &str, db: &Database4) -> Vec<Statement> {

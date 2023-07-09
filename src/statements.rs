@@ -1,5 +1,39 @@
 pub mod statements {
-    use crate::{qrtlib::field_types::FieldTypes, qrtlib::table::RecordValue};
+    use crate::{identity::identity::Name, qrtlib::field_types::FieldTypes, qrtlib::table::RecordValue};
+
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct VariableAssignment {
+        variable_name: String,
+        value: String,
+    }
+    impl VariableAssignment {
+        pub fn new(variable_name: String, value: String) -> VariableAssignment {
+            return VariableAssignment { variable_name, value };
+        }
+        pub fn nameget(&self) -> String {
+            return self.variable_name.clone();
+        }
+        pub fn valueget(&self) -> String {
+            return self.value.clone();
+        }
+    }
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct AliasDeclaration {
+        alias_name: String,
+        name: Name,
+    }
+    impl AliasDeclaration {
+        pub fn new(alias_name: String, name: Name) -> AliasDeclaration {
+            return AliasDeclaration { alias_name, name };
+        }
+        pub fn nameget(&self) -> String {
+            return self.alias_name.clone();
+        }
+        pub fn valueget(&self) -> Name {
+            return self.name.clone();
+        }
+    }
+
     #[derive(Debug, Clone, PartialEq)]
     pub enum DDLTypes {
         AddDatabase,
@@ -79,6 +113,8 @@ pub mod statements {
     pub enum StatementCategory {
         DDL(DDLTypes),
         DML(DMLTypes),
+        VariableAssignment(VariableAssignment),
+        AliasDeclaration(AliasDeclaration),
         UNRECOGNIZED,
     }
     impl StatementCategory {
@@ -93,6 +129,18 @@ pub mod statements {
             } else {
                 return StatementCategory::UNRECOGNIZED;
             }
+        }
+        pub fn is_variable(cat: &StatementCategory) -> bool {
+            return match cat {
+                StatementCategory::VariableAssignment(_) => true,
+                _ => false,
+            };
+        }
+        pub fn is_alias(cat: &StatementCategory) -> bool {
+            return match cat {
+                StatementCategory::AliasDeclaration(_) => true,
+                _ => false,
+            };
         }
     }
     // CriteriaTypes
@@ -187,8 +235,8 @@ pub mod statements {
         pub fn new(clause: WhereClauses, pname: String, value: String) -> Criteria {
             return Criteria { clause, pname, value };
         }
-        pub fn public_from(token: String)->Option<Criteria>{
-            return  Criteria::from(token);
+        pub fn public_from(token: String) -> Option<Criteria> {
+            return Criteria::from(token);
         }
         fn from(token: String) -> Option<Criteria> {
             let mut pat = "";
@@ -267,6 +315,19 @@ pub mod statements {
                 criteria,
             };
         }
+        pub fn fromcat(cat: StatementCategory) -> Statement {
+            let text = String::new();
+            let objectnames: Vec<String> = Vec::new();
+            let verbs: Vec<String> = Vec::new();
+            let criteria: Vec<Criteria> = Vec::new();
+            return Statement {
+                category: cat,
+                text,
+                objectnames,
+                verbs,
+                criteria,
+            };
+        }
         pub fn empty() -> Statement {
             return Statement::new("");
         }
@@ -280,7 +341,7 @@ pub mod statements {
             //return property
         }
 
-        pub fn get_verbs_ref(&self)->&str{
+        pub fn get_verbs_ref(&self) -> &str {
             return &self.verbs[0];
         }
 
@@ -312,7 +373,9 @@ pub mod statements {
                 }
             }
 
-            if self.verbs.len() != 1 {
+            if self.verbs.len() != 1
+                && (!StatementCategory::is_variable(&self.category) || !StatementCategory::is_alias(&self.category))
+            {
                 println!("there should be only one verb");
                 if self.verbs.len() > 1 {
                     println!("more than one verb was provided");
@@ -347,6 +410,14 @@ pub mod statements {
         }
 
         pub fn prepare2(&mut self) -> PrepareResult {
+            println!("prep2");
+            println!("{:?}", &self);
+            if StatementCategory::is_variable(&self.category){
+                return PrepareResult::SUCCESS;
+            }
+            if StatementCategory::is_alias(&self.category){
+                return PrepareResult::SUCCESS;
+            }
             if self.verbs.len() != 1 {
                 println!("there should be only one verb");
                 if self.verbs.len() > 1 {

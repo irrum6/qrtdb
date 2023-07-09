@@ -8,6 +8,10 @@ mod statements;
 
 mod parser;
 
+mod context;
+
+mod identity;
+
 pub mod qrtlib {
     // use crate::parser;
 
@@ -21,6 +25,10 @@ pub mod qrtlib {
 
     pub use super::parser::read2;
     pub use super::parser::whole_statement2;
+
+    pub use super::context::context;
+
+    pub use super::identity::identity;
 
     pub fn help() {
         println!("Help!");
