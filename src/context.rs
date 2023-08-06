@@ -253,9 +253,9 @@ pub mod context {
     }
 
     pub enum ContextTypes {
-        GlobalContext(GlobalContext),
-        UserContext(UserContext),
-        SessionContext(SessionContext),
-        QueryContext(QueryContext),
+        GlobalContext,
+        UserContext,
+        SessionContext,
+        QueryContext,
     }
 }

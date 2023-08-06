@@ -272,7 +272,9 @@ pub mod statements {
             return None;
         }
         pub fn replace_variable(&mut self, qc: &impl Context) -> bool {
+            println!("{:?}", self.value);
             if self.value.starts_with("?") {
+                println!("{:?}", self.value);
                 let variable = self.value.replace("?", "");
                 let resolved = qc.get_variable_value(variable);
                 if resolved.1 == false {
@@ -280,6 +282,7 @@ pub mod statements {
                     return false;
                 }
                 self.value = resolved.0;
+                println!("{:?}", self.value);
                 return true;
             }
             return false;
@@ -362,6 +365,13 @@ pub mod statements {
             return &self.verbs[0];
         }
 
+        //replace variables with values in criterias
+        pub fn straighten_criteria(&mut self, qc: &impl Context) {
+            println!("straighten_criteria");
+            for c in &mut self.criteria {
+                c.replace_variable(qc);
+            }
+        }
         pub fn get_crit(&self) -> Vec<Criteria> {
             return self.criteria.clone();
         }

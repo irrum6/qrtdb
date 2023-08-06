@@ -33,7 +33,7 @@ pub mod db4 {
             let database_indexes: HashMap<String, u64> = HashMap::new();
             let dbindex = 0;
             let working_database_index = 0;
-            let current_context = ContextTypes::QueryContext(QueryContext::new());
+            let current_context = ContextTypes::QueryContext;
             let ctxqry = QueryContext::new();
             let ctxssn = SessionContext::new();
             let ctxglob = GlobalContext::new();
@@ -58,16 +58,16 @@ pub mod db4 {
         fn assign_variable(&mut self, n: String, v: String) {
             // &self.current_context.get_variable_value();
             match &self.current_context {
-                ContextTypes::GlobalContext(_) => {
+                ContextTypes::GlobalContext => {
                     self.ctxglob.set_variable_value(n, v);
                 }
-                ContextTypes::UserContext(_) => {
+                ContextTypes::UserContext => {
                     self.ctxuser.set_variable_value(n, v);
                 }
-                ContextTypes::SessionContext(_) => {
+                ContextTypes::SessionContext => {
                     self.ctxssn.set_variable_value(n, v);
                 }
-                ContextTypes::QueryContext(_) => {
+                ContextTypes::QueryContext => {
                     self.ctxqry.set_variable_value(n, v);
                 }
             }
@@ -76,16 +76,16 @@ pub mod db4 {
         fn create_alias(&mut self, alias: String, name: Name) {
             // &self.current_context.get_variable_value();
             match &self.current_context {
-                ContextTypes::GlobalContext(_) => {
+                ContextTypes::GlobalContext => {
                     self.ctxglob.set_alias_value(alias, name);
                 }
-                ContextTypes::UserContext(_) => {
+                ContextTypes::UserContext => {
                     self.ctxuser.set_alias_value(alias, name);
                 }
-                ContextTypes::SessionContext(_) => {
+                ContextTypes::SessionContext => {
                     self.ctxssn.set_alias_value(alias, name);
                 }
-                ContextTypes::QueryContext(_) => {
+                ContextTypes::QueryContext => {
                     self.ctxqry.set_alias_value(alias, name);
                 }
             }
@@ -191,7 +191,7 @@ pub mod db4 {
 
         fn select_from_table(&mut self, dbindex: u64, tablename: String, s: Statement) -> QueryResult {
             println!("read table");
-            return self.databases[dbindex as usize].select(tablename, s);
+            return self.databases[dbindex as usize].select(tablename, s,&self.ctxqry);
         }
 
         fn update_rows_in_table(&mut self, dbindex: u64, tablename: String, s: Statement) -> QueryResult {
@@ -350,6 +350,7 @@ pub mod db4 {
                     }
                     PrepareResult::SUCCESS => {
                         // execute staments
+                        st.straighten_criteria(&self.ctxqry);
                         self.execute(st);
                     }
                 };
@@ -357,7 +358,8 @@ pub mod db4 {
         }
         pub fn process_statement2(&mut self, line: &String) {
             match whole_statement2(&line) {
-                Ok((rem, stmt)) => {
+                Ok((rem, mut stmt)) => {
+                    stmt.straighten_criteria(&self.ctxqry);
                     self.execute(stmt);
                 }
                 Err(nom::Err::Error(ne)) => {

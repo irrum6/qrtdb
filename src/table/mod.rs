@@ -1,21 +1,21 @@
-mod tablecolumn;
-mod record;
 mod constraint;
+mod record;
+mod tablecolumn;
 
-pub mod table {   
+pub mod table {
 
     use crate::{
         qrtlib::field_types::FieldTypes,
-        qrtlib::statements::Statement,
         qrtlib::statements::{Criteria, QueryResult},
         qrtlib::Database,
+        qrtlib::{context::Context, statements::Statement},
     };
 
-    pub use super::tablecolumn::tcolumn::TableColumn;
-    pub use super::record::record::RecordValue;
+    pub use super::constraint::constraint::{Constraint, ConstraintTypes};
     pub use super::record::record::Record;
-    pub use super::constraint::constraint::{Constraint,ConstraintTypes};
-    
+    pub use super::record::record::RecordValue;
+    pub use super::tablecolumn::tcolumn::TableColumn;
+
     pub struct Table {
         name: String,
         head: Vec<String>,
@@ -337,7 +337,7 @@ pub mod table {
         pub fn insert_record(&mut self, r: Record) {
             self.records.push(r);
         }
-        pub fn select(&mut self, s: Statement) -> QueryResult {
+        pub fn select(&mut self, s: Statement, ctx: &impl Context) -> QueryResult {
             let selecttext = s.verbs[0].clone();
             let fields: Vec<String> = selecttext.replace("$", "").split(",").map(|e| String::from(e)).collect();
 
@@ -346,7 +346,6 @@ pub mod table {
 
             let mut indexes: Vec<usize> = Vec::new();
 
-            
             for f in fields {
                 if let Some(x) = self.get_column_index(&f) {
                     indexes.push(x);
@@ -359,6 +358,10 @@ pub mod table {
                     }
                 }
             }
+            for c in &mut crit {
+                c.replace_variable(ctx);
+            }
+
             for r in &self.records {
                 let mut applies = true;
                 if crit.len() > 0 {

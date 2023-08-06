@@ -3,7 +3,7 @@ pub mod database {
     // use std::ops::Index;
     use crate::{
         qrtlib::field_types::FieldTypes,
-        qrtlib::statements::{QueryResult, Statement},
+        qrtlib::{statements::{QueryResult, Statement}, context::Context},
         qrtlib::table::{Constraint, ConstraintTypes, Record, RecordValue, Table},
     };
 
@@ -310,9 +310,9 @@ pub mod database {
             return QueryResult::SUCCESS;
             // return self.tables[*table_index as usize].insert(s, &mut self);
         }
-        pub fn select(&mut self, tablename: String, s: Statement) -> QueryResult {
+        pub fn select(&mut self, tablename: String, s: Statement, ctx:&impl Context) -> QueryResult {
             if let Some(table_index) = self.table_indexes.get(&tablename) {
-                return self.tables[*table_index as usize].select(s);
+                return self.tables[*table_index as usize].select(s,ctx);
             } else {
                 println!("no tables were found with such name");
                 return QueryResult::FAILURE;
