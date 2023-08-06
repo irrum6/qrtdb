@@ -1,16 +1,8 @@
-pub mod table {
-    // use nom::{
-    //     branch::alt,
-    //     bytes,
-    //     bytes::complete::{is_not, tag, tag_no_case, take_till, take_until, take_while, take_while1},
-    //     character::complete::{self, char as ncchar, line_ending, multispace0, newline},
-    //     character::{is_alphabetic, is_newline, is_space},
-    //     combinator::{self, all_consuming, map, map_parser, opt, recognize},
-    //     error::context,
-    //     multi::separated_list1,
-    //     sequence::{delimited, pair, preceded, separated_pair, terminated, tuple},
-    //     IResult,
-    // };
+mod tablecolumn;
+mod record;
+mod constraint;
+
+pub mod table {   
 
     use crate::{
         qrtlib::field_types::FieldTypes,
@@ -18,313 +10,12 @@ pub mod table {
         qrtlib::statements::{Criteria, QueryResult},
         qrtlib::Database,
     };
-    #[derive(Clone)]
-    pub struct TableColumn {
-        name: String,
-        data_type: FieldTypes,
-    }
-    impl TableColumn {
-        pub fn new(name: String, data_type: FieldTypes) -> Option<TableColumn> {
-            let taco = TableColumn { name, data_type };
-            return Some(taco);
-        }
 
-        pub fn new2(name: String, data_type: FieldTypes) -> TableColumn {
-            return TableColumn { name, data_type };
-        }
-
-        pub fn from_text(input: &str) -> Option<TableColumn> {
-            if input.is_empty() {
-                return None;
-            }
-            let split: Vec<&str> = input.split(" ").collect();
-
-            if split.len() < 2 {
-                println!("no type was provided for column");
-                return None;
-            }
-            return TableColumn::from(split[0], split[1]);
-        }
-
-        pub fn from(name: &str, ftype: &str) -> Option<TableColumn> {
-            if name == "" {
-                return None;
-            }
-            if let Some(data_type) = FieldTypes::from(ftype) {
-                return Some(TableColumn {
-                    name: String::from(name),
-                    data_type,
-                });
-            } else {
-                return None;
-            }
-        }
-        pub fn data_type_ref(&self) -> &FieldTypes {
-            return &self.data_type;
-        }
-
-        pub fn name(&self) -> String {
-            return self.name.clone();
-        }
-        pub fn equal(t: TableColumn, t2: TableColumn) -> bool {
-            return t.typef() == t2.typef();
-        }
-
-        pub fn self_equal(&self, tc: TableColumn) -> bool {
-            return self.data_type == tc.typef();
-        }
-        pub fn typef(&self) -> FieldTypes {
-            return self.data_type.clone();
-        }
-    }
-
-    #[derive(Clone, PartialEq)]
-    pub struct RecordValue {
-        pub(super) value: FieldTypes,
-    }
-    impl RecordValue {
-        pub fn new(value: FieldTypes) -> RecordValue {
-            return RecordValue { value };
-        }
-        pub fn to_string(&self) -> String {
-            return FieldTypes::tostr(&self.value);
-        }
-        pub fn set(&mut self, r: FieldTypes) {
-            self.value = r;
-        }
-        pub fn get(&self) -> FieldTypes {
-            return self.value.clone();
-        }
-        pub fn get_referenced(&self) -> &FieldTypes {
-            return &self.value;
-        }
-
-        pub fn from(f: String) -> Option<RecordValue> {
-            if let Some(ftype) = FieldTypes::from(&f) {
-                return Some(RecordValue { value: ftype });
-            }
-            return None;
-        }
-    }
-    pub struct Record {
-        pub(crate) fields: Vec<RecordValue>,
-    }
-
-    impl Record {
-        pub fn new(fields: Vec<RecordValue>) -> Record {
-            return Record { fields };
-        }
-        pub fn empty() -> Record {
-            let fields: Vec<RecordValue> = Vec::new();
-            return Record { fields };
-        }
-
-        pub fn get(&self, index: usize) -> Option<RecordValue> {
-            if index > self.fields.len() {
-                return None;
-            }
-            return Some(self.fields[index].clone());
-        }
-        pub fn set(&mut self, index: usize, v: &String) {
-            if index > self.fields.len() {
-                return;
-            }
-            // self.fields[index].set(v);
-        }
-        pub fn serialize_record(record: Record) -> Vec<u8> {
-            let data: Vec<u8> = Vec::new();
-            return data;
-        }
-        pub fn deserialize_record(data: Vec<u8>, table: Table) -> Record {
-            let fields: Vec<RecordValue> = Vec::new();
-            return Record { fields };
-        }
-    }
-    #[derive(Clone, PartialEq)]
-    pub enum ConstraintTypes {
-        PrimaryKey,
-        ForeignKey,
-        ColumnMatch,
-        Unique,
-        NoConstraint,
-    }
-    impl ConstraintTypes {
-        pub fn from(ctype: &str) -> ConstraintTypes {
-            return match ctype {
-                "matches" | "ma" | "m" => ConstraintTypes::ColumnMatch,
-                "primary" | "pk" | "p" => ConstraintTypes::PrimaryKey,
-                "foreign" | "fk" | "f" => ConstraintTypes::ForeignKey,
-                "unique" | "uq" | "u" => ConstraintTypes::Unique,
-                "==>" => ConstraintTypes::NoConstraint,
-                _ => ConstraintTypes::NoConstraint,
-            };
-        }
-        pub fn to(ct: &ConstraintTypes) -> String {
-            return match ct {
-                ConstraintTypes::ColumnMatch => String::from("=m>"),
-                ConstraintTypes::PrimaryKey => String::from("=p>"),
-                ConstraintTypes::ForeignKey => String::from("=f>"),
-                ConstraintTypes::Unique => String::from("=u>"),
-                ConstraintTypes::NoConstraint => String::from("==>"),
-            };
-        }
-        pub fn describe(ct: &ConstraintTypes) -> String {
-            return match ct {
-                ConstraintTypes::ColumnMatch => String::from("Column Match"),
-                ConstraintTypes::PrimaryKey => String::from("Primary Key"),
-                ConstraintTypes::ForeignKey => String::from("Foreign Key"),
-                ConstraintTypes::Unique => String::from("Unique"),
-                ConstraintTypes::NoConstraint => String::from("NoConstraint"),
-            };
-        }
-    }
-    #[derive(Clone)]
-    pub struct Constraint {
-        ctype: ConstraintTypes,
-        column: String,
-        pub ref_table: String,
-        pub ref_column: String,
-    }
-    impl Constraint {
-        pub fn new(ct: &str, col: &str, reft: &str, refcol: &str) -> Constraint {
-            let ctype = ConstraintTypes::from(ct);
-            let column = String::from(col);
-            let ref_table = String::from(reft);
-            let ref_column = String::from(refcol);
-            return Constraint {
-                ctype,
-                column,
-                ref_table,
-                ref_column,
-            };
-        }
-        pub fn construct_primary_key(name: &str) -> Constraint {
-            return Constraint {
-                ctype: ConstraintTypes::PrimaryKey,
-                column: String::from(name),
-                ref_table: String::new(),
-                ref_column: String::new(),
-            };
-        }
-        pub fn ct(&self) -> ConstraintTypes {
-            return self.ctype.clone();
-        }
-
-        pub fn col(&self) -> String {
-            return self.column.clone();
-        }
-
-        pub fn col_as_ref(&self) -> &String {
-            return &self.column;
-        }
-
-        pub fn refta(&self) -> &String {
-            return &self.ref_table;
-        }
-
-        pub fn refcol(&self) -> &String {
-            return &&self.ref_column;
-        }
-
-        pub fn ct_from(token: &str) -> Option<Constraint> {
-            if token.is_empty() {
-                return None;
-            }
-
-            let split: Vec<String> = token.trim().split(" ").map(|e| String::from(e)).collect();
-
-            if split.len() < 2 {
-                return None;
-            }
-
-            let column = split[0].clone();
-
-            let ctype = ConstraintTypes::from(&split[1]);
-
-            match ctype {
-                ConstraintTypes::Unique | ConstraintTypes::PrimaryKey => {
-                    return Some(Constraint {
-                        ctype,
-                        column,
-                        ref_table: String::new(),
-                        ref_column: String::new(),
-                    });
-                }
-                ConstraintTypes::NoConstraint => {
-                    //and then will ignore it
-                    return None;
-                }
-                ConstraintTypes::ForeignKey | ConstraintTypes::ColumnMatch => {
-                    if split.len() < 3 {
-                        println!("bad reference");
-                        return None;
-                    }
-                    let references: Vec<String> = split[2].split(".").map(|e| String::from(e)).collect();
-                    let ref_table = references[0].clone();
-                    let ref_column = references[1].clone();
-
-                    return Some(Constraint {
-                        ctype,
-                        column,
-                        ref_table,
-                        ref_column,
-                    });
-                }
-            }
-        }
-
-        pub fn from_token(col: &str, token: &str) -> Option<Constraint> {
-            let mut pat = "";
-
-            if token.contains("=u>") {
-                pat = "=u>";
-            }
-
-            if token.contains("=p>") {
-                pat = "=p>";
-            }
-
-            if token.contains("=p>") || token.contains("=u>") {
-                let ctype = ConstraintTypes::from(pat);
-                return Some(Constraint {
-                    ctype,
-                    column: String::from(col),
-                    ref_table: String::new(),
-                    ref_column: String::new(),
-                });
-            }
-            if token.contains("=m>") {
-                pat = "=m>";
-            }
-
-            if token.contains("=f>") {
-                pat = "=f>";
-            }
-
-            if token.contains("=fk>") {
-                pat = "=fk>";
-            }
-            if pat.len() > 0 {
-                let column = String::from(col);
-                let split: Vec<String> = token.trim().replace(pat, "").split(".").map(|e| String::from(e)).collect();
-                if split.len() != 2 {
-                    println!("bad reference");
-                    return None;
-                }
-                let ref_table = split[0].clone();
-                let ref_column = split[1].clone();
-                let ctype = ConstraintTypes::from(pat);
-
-                return Some(Constraint {
-                    ctype,
-                    column,
-                    ref_table,
-                    ref_column,
-                });
-            }
-            return None;
-        }
-    }
+    pub use super::tablecolumn::tcolumn::TableColumn;
+    pub use super::record::record::RecordValue;
+    pub use super::record::record::Record;
+    pub use super::constraint::constraint::{Constraint,ConstraintTypes};
+    
     pub struct Table {
         name: String,
         head: Vec<String>,
@@ -629,7 +320,7 @@ pub mod table {
         }
         pub fn info(&self) -> QueryResult {
             for f in &self.columns {
-                println!("{}-{}", f.name(), FieldTypes::describe(&f.data_type));
+                println!("{}-{}", f.name(), FieldTypes::describe(f.data_type_ref()));
             }
             for c in &self.constraints {
                 println!("{}-{}", &c.col(), ConstraintTypes::describe(&c.ct()));
@@ -654,6 +345,8 @@ pub mod table {
             println!("records:{}", &self.records.len());
 
             let mut indexes: Vec<usize> = Vec::new();
+
+            
             for f in fields {
                 if let Some(x) = self.get_column_index(&f) {
                     indexes.push(x);
@@ -688,7 +381,7 @@ pub mod table {
                 }
                 for i in &indexes {
                     if let Some(v) = &r.get(*i) {
-                        match &v.value {
+                        match &v.get() {
                             FieldTypes::Varchar(x) => println!("{}", x.get()),
                             FieldTypes::Fxchar(x) => println!("{}", x.get()),
                             FieldTypes::Number(x) => println!("{}", x),

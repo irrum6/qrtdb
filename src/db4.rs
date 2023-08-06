@@ -14,20 +14,16 @@ pub mod db4 {
         qrtlib::{self, read2, whole_statement2, Database, MetaCommands},
     };
 
-    // use crate::qrtlib::stmnt2;
-
-    // meta commands
-
     pub struct Database4 {
         databases: Vec<Database>,
         database_indexes: HashMap<String, u64>,
         dbindex: u64,
         working_database_index: u64,
         current_context: ContextTypes,
-        ctxq: QueryContext,
-        ctxs: SessionContext,
-        ctxg: GlobalContext,
-        ctxu: UserContext,
+        ctxqry: QueryContext,
+        ctxssn: SessionContext,
+        ctxglob: GlobalContext,
+        ctxuser: UserContext,
     }
 
     impl Database4 {
@@ -38,20 +34,20 @@ pub mod db4 {
             let dbindex = 0;
             let working_database_index = 0;
             let current_context = ContextTypes::QueryContext(QueryContext::new());
-            let ctxq = QueryContext::new();
-            let ctxs = SessionContext::new();
-            let ctxg = GlobalContext::new();
-            let ctxu = UserContext::new();
+            let ctxqry = QueryContext::new();
+            let ctxssn = SessionContext::new();
+            let ctxglob = GlobalContext::new();
+            let ctxuser = UserContext::new();
             return Database4 {
                 databases,
                 database_indexes,
                 dbindex,
                 working_database_index,
                 current_context,
-                ctxq,
-                ctxs,
-                ctxg,
-                ctxu,
+                ctxqry,
+                ctxssn,
+                ctxglob,
+                ctxuser,
             };
         }
 
@@ -63,16 +59,16 @@ pub mod db4 {
             // &self.current_context.get_variable_value();
             match &self.current_context {
                 ContextTypes::GlobalContext(_) => {
-                    self.ctxg.set_variable_value(n, v);
+                    self.ctxglob.set_variable_value(n, v);
                 }
                 ContextTypes::UserContext(_) => {
-                    self.ctxu.set_variable_value(n, v);
+                    self.ctxuser.set_variable_value(n, v);
                 }
                 ContextTypes::SessionContext(_) => {
-                    self.ctxs.set_variable_value(n, v);
+                    self.ctxssn.set_variable_value(n, v);
                 }
                 ContextTypes::QueryContext(_) => {
-                    self.ctxq.set_variable_value(n, v);
+                    self.ctxqry.set_variable_value(n, v);
                 }
             }
         }
@@ -81,16 +77,16 @@ pub mod db4 {
             // &self.current_context.get_variable_value();
             match &self.current_context {
                 ContextTypes::GlobalContext(_) => {
-                    self.ctxg.set_alias_value(alias, name);
+                    self.ctxglob.set_alias_value(alias, name);
                 }
                 ContextTypes::UserContext(_) => {
-                    self.ctxu.set_alias_value(alias, name);
+                    self.ctxuser.set_alias_value(alias, name);
                 }
                 ContextTypes::SessionContext(_) => {
-                    self.ctxs.set_alias_value(alias, name);
+                    self.ctxssn.set_alias_value(alias, name);
                 }
                 ContextTypes::QueryContext(_) => {
-                    self.ctxq.set_alias_value(alias, name);
+                    self.ctxqry.set_alias_value(alias, name);
                 }
             }
         }
@@ -242,7 +238,7 @@ pub mod db4 {
                 //rough patch
                 if tablename.starts_with("?") {
                     let alias = tablename.replace("?", "");
-                    let full_name = self.ctxq.get_alias_value(alias);
+                    let full_name = self.ctxqry.get_alias_value(alias);
 
                     if full_name.1 == false {
                         println!("could not resolve alias");
@@ -375,6 +371,7 @@ pub mod db4 {
         }
         pub fn help() {
             println!("type .rex with filename followed to execute query");
+            println!("type .x to quit");
         }
         pub fn ls(&mut self, s: &String) {
             //over space
@@ -403,17 +400,17 @@ pub mod db4 {
             return;
         }
 
-        pub fn read_and_execute(&mut self, s: &String) -> Result<String, io::Error> {
-            let x: Vec<&str> = s.trim().split(" ").collect();
+        // pub fn read_and_execute(&mut self, s: &String) -> Result<String, io::Error> {
+        //     let x: Vec<&str> = s.trim().split(" ").collect();
 
-            if x.len() > 1 && x[1] != "" {
-                let mut line = String::new();
-                File::open(x[1])?.read_to_string(&mut line)?;
-                self.process_statement(&line);
-            }
+        //     if x.len() > 1 && x[1] != "" {
+        //         let mut line = String::new();
+        //         File::open(x[1])?.read_to_string(&mut line)?;
+        //         self.process_statement(&line);
+        //     }
 
-            return Ok(String::from("success"));
-        }
+        //     return Ok(String::from("success"));
+        // }
 
         pub fn metacommand_processor(&mut self, s: &String) -> bool {
             let mc = MetaCommands::from(&s);

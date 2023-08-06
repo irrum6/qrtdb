@@ -1,2 +1,7 @@
 studes = @sys::other::studs ;
 @?studes $ id,pid,age>21,name $;
+
+let agevar = 24;
+@?studes $ id,pid,age>?agevar,name $;
+
+@?studes $ id,pid,name $ [age>?agevar];

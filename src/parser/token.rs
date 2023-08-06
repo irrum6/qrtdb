@@ -21,6 +21,8 @@ pub mod token {
         VariableAssignment,
     };
 
+    use crate::qrtlib::context::{self, Context, ContextTypes, QueryContext, SessionContext};
+
     use crate::qrtlib::identity::Name;
     use crate::qrtlib::Database4;
 
@@ -83,6 +85,8 @@ pub mod token {
             tuple((
                 // eat space
                 multispace0,
+                tag("let"),
+                multispace0,
                 combinator::map(take_until(" "), |inner: &str| String::from(inner)),
                 multispace0,
                 tag("="),
@@ -91,7 +95,7 @@ pub mod token {
                 multispace0,
                 tag(";"),
             )),
-            |x| Statement::fromcat(StatementCategory::VariableAssignment(VariableAssignment::new(x.1, x.5))),
+            |x| Statement::fromcat(StatementCategory::VariableAssignment(VariableAssignment::new(x.3, x.7))),
         )(input);
     }
 

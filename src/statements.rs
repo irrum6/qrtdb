@@ -1,5 +1,9 @@
 pub mod statements {
-    use crate::{identity::identity::Name, qrtlib::field_types::FieldTypes, qrtlib::table::RecordValue};
+    use crate::{
+        identity::identity::Name,
+        qrtlib::context::{self, Context, ContextTypes, QueryContext, SessionContext},
+        qrtlib::{field_types::FieldTypes, table::RecordValue},
+    };
 
     #[derive(Debug, Clone, PartialEq)]
     pub struct VariableAssignment {
@@ -261,11 +265,24 @@ pub mod statements {
                     return None;
                 }
                 let pname = x[0].clone();
-                let value = x[1].clone();
+                let mut value = x[1].clone();
                 let critter = Criteria::new(WhereClauses::from(pat), pname, value);
                 return Some(critter);
             }
             return None;
+        }
+        pub fn replace_variable(&mut self, qc: &impl Context) -> bool {
+            if self.value.starts_with("?") {
+                let variable = self.value.replace("?", "");
+                let resolved = qc.get_variable_value(variable);
+                if resolved.1 == false {
+                    println!("could not resolve alias");
+                    return false;
+                }
+                self.value = resolved.0;
+                return true;
+            }
+            return false;
         }
         pub fn en_masse(fromwhere: String) -> Vec<Criteria> {
             let mut crits: Vec<Criteria> = Vec::new();
@@ -412,10 +429,10 @@ pub mod statements {
         pub fn prepare2(&mut self) -> PrepareResult {
             println!("prep2");
             println!("{:?}", &self);
-            if StatementCategory::is_variable(&self.category){
+            if StatementCategory::is_variable(&self.category) {
                 return PrepareResult::SUCCESS;
             }
-            if StatementCategory::is_alias(&self.category){
+            if StatementCategory::is_alias(&self.category) {
                 return PrepareResult::SUCCESS;
             }
             if self.verbs.len() != 1 {
