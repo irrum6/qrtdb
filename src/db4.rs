@@ -24,6 +24,7 @@ pub mod db4 {
         ctxssn: SessionContext,
         ctxglob: GlobalContext,
         ctxuser: UserContext,
+        version: String,
     }
 
     impl Database4 {
@@ -38,6 +39,7 @@ pub mod db4 {
             let ctxssn = SessionContext::new();
             let ctxglob = GlobalContext::new();
             let ctxuser = UserContext::new();
+            let version = String::from("0.11.3");
             return Database4 {
                 databases,
                 database_indexes,
@@ -48,9 +50,13 @@ pub mod db4 {
                 ctxssn,
                 ctxglob,
                 ctxuser,
+                version,
             };
         }
 
+        pub fn version(&self) -> &str {
+            return &self.version;
+        }
         fn set_context(&mut self, ctx: ContextTypes) {
             self.current_context = ctx;
         }
@@ -191,7 +197,7 @@ pub mod db4 {
 
         fn select_from_table(&mut self, dbindex: u64, tablename: String, s: Statement) -> QueryResult {
             println!("read table");
-            return self.databases[dbindex as usize].select(tablename, s,&self.ctxqry);
+            return self.databases[dbindex as usize].select(tablename, s, &self.ctxqry);
         }
 
         fn update_rows_in_table(&mut self, dbindex: u64, tablename: String, s: Statement) -> QueryResult {
@@ -374,6 +380,7 @@ pub mod db4 {
         pub fn help() {
             println!("type .rex with filename followed to execute query");
             println!("type .x to quit");
+            println!("type .v to display database version");
         }
         pub fn ls(&mut self, s: &String) {
             //over space
@@ -430,6 +437,9 @@ pub mod db4 {
                 MetaCommands::NewParser => {
                     let _res = read2(s, self);
                 }
+                MetaCommands::VERSION => {
+                    println!("Version:{}", self.version());
+                }
             }
             return false;
         }
@@ -450,6 +460,7 @@ pub mod db4 {
 
         let mut line = String::new();
 
+        println!("Hettooluykaa v{}", db4.version());
         loop {
             println!("Hettooluykaa > ");
             println!("type .help for help");

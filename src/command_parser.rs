@@ -6,6 +6,7 @@ pub mod command_parser {
         ReadAndExecute,
         NewParser,
         UnrecognizedCommand,
+        VERSION
     }
     impl MetaCommands {
         pub fn from(s: &str) -> MetaCommands {
@@ -16,6 +17,7 @@ pub mod command_parser {
                 ".tables" | ".TABLES" | ".T" | ".t" | ".ls" => MetaCommands::TABLES,
                 ".rex" | ".REX" | ".RX" | ".rx" => MetaCommands::ReadAndExecute,
                 ".par" | ".nup" | ".np" | ".rax" => MetaCommands::NewParser,
+                ".v" | ".ver" | ".version" | ".Version" => MetaCommands::VERSION,
                 //ls databases
                 //in base
                 //ls namespacs
