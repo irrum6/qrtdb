@@ -39,7 +39,7 @@ pub mod db4 {
             let ctxssn = SessionContext::new();
             let ctxglob = GlobalContext::new();
             let ctxuser = UserContext::new();
-            let version = String::from("0.11.3");
+            let version = String::from("0.12.1");
             return Database4 {
                 databases,
                 database_indexes,
