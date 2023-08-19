@@ -8,7 +8,7 @@ use qrtdb::qrtlib::field_types::DateFieldCustom;
 
 mod query;
 fn main() {
-    DateFieldCustom::test_sede();
+    // DateFieldCustom::test_sede();
     rundb4();
     return;
 }

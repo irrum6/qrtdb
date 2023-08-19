@@ -16,7 +16,7 @@ pub mod field_types {
         SignedInteger(i64),
         Varchar(Varchar),
         Fxchar(Fixedchar),
-        Date(u64),
+        Date(DateFieldCustom),
     }
 
     impl FieldTypes {
@@ -34,7 +34,7 @@ pub mod field_types {
                     let fchar = Fixedchar::new(24, String::new());
                     Some(FieldTypes::Fxchar(fchar))
                 }
-                "date" | "D" | "d" => Some(FieldTypes::Date(0)),
+                "date" | "D" | "d" => Some(FieldTypes::Date(DateFieldCustom::dummy())),
                 _ => None,
             };
         }
@@ -63,8 +63,8 @@ pub mod field_types {
                     Some(FieldTypes::Fxchar(fchar))
                 }
                 "date" => {
-                    let x: u64 = value.parse().unwrap();
-                    Some(FieldTypes::Date(x))
+                    let dfc = DateFieldCustom::from_str(value);
+                    Some(FieldTypes::Date(dfc))
                 }
                 _ => None,
             };
@@ -98,8 +98,8 @@ pub mod field_types {
                     Some(FieldTypes::Fxchar(fchar))
                 }
                 FieldTypes::Date(_) => {
-                    let x: u64 = value.parse().unwrap();
-                    Some(FieldTypes::Date(x))
+                    let dfc = DateFieldCustom::from_str(value);
+                    Some(FieldTypes::Date(dfc))
                 }
 
                 _ => None,
@@ -135,7 +135,7 @@ pub mod field_types {
                 FieldTypes::SignedInteger(v) => v.to_string(),
                 FieldTypes::Varchar(v) => v.get(),
                 FieldTypes::Fxchar(v) => v.get(),
-                FieldTypes::Date(v) => v.to_string(),
+                FieldTypes::Date(dfc) => dfc.into_fulldatetime_string(),
             };
         }
         /**
@@ -148,7 +148,7 @@ pub mod field_types {
                 FieldTypes::SignedInteger(_) => String::from("sigint:64 bit unsigned integer"),
                 FieldTypes::Varchar(_) => String::from("varchar:variable length string"),
                 FieldTypes::Fxchar(_) => String::from("fxchar:fixed length string"),
-                FieldTypes::Date(_) => String::from("date:64 bit unsigned integer"),
+                FieldTypes::Date(_) => String::from("date:date(64 bit unsigned integer)"),
             };
         }
 
@@ -158,7 +158,7 @@ pub mod field_types {
                 FieldTypes::Integer(int) => int.to_be_bytes().to_vec(),
                 FieldTypes::Varchar(var) => var.get().into_bytes(),
                 FieldTypes::Fxchar(var) => var.get().into_bytes(),
-                FieldTypes::Date(int) => int.to_be_bytes().to_vec(),
+                FieldTypes::Date(dfc) => dfc.serialize(),
                 FieldTypes::SignedInteger(int) => int.to_be_bytes().to_vec(),
             };
         }
@@ -193,7 +193,7 @@ pub mod field_types {
                     for i in 0..8 {
                         x[i] = v[i];
                     }
-                    FieldTypes::Date(u64::from_be_bytes(x))
+                    FieldTypes::Date(DateFieldCustom::deserialize(v))
                 }
             };
             return ftype;

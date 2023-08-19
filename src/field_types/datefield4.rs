@@ -2,6 +2,17 @@
  * Before I think of something better
  */
 pub mod datefield4 {
+    const MAX_YEAR: u32 = 268435455;
+    const MAX_MONTH: u8 = 12;
+    const MAX_DAY: u8 = 31;
+    const MAX_HOUR: u8 = 24;
+    const MAX_MINUTE: u8 = 59;
+    const MAX_SECONDS: u8 = 60;
+    const MAX_MILLISECONDS: u16 = 999;
+
+    const DAYS_NONLEAP: [u8; 12] = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    const DAYS_LEAP: [u8; 12] = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    #[derive(Clone, PartialEq)]
     pub struct DateFieldCustom {
         year: u32,
         month: u8,
@@ -20,10 +31,32 @@ pub mod datefield4 {
         pub fn new(str: String) -> DateFieldCustom {
             let separator = "-";
             let split: Vec<&str> = str.split(separator).collect();
-            return DateFieldCustom::dummy();
+            let year: u32 = split[0].parse().unwrap();
+            let month: u8 = split[1].parse().unwrap();
+
+            let split = split[2].clone();
+            let split: Vec<&str> = split.split(" ").collect();
+            let day: u8 = split[0].parse().unwrap();
+
+            let split = split[1].clone();
+            let split: Vec<&str> = split.split(":").collect();
+
+            let hour: u8 = split[0].parse().unwrap();
+            let minute: u8 = split[1].parse().unwrap();
+
+            let split = split[2].clone();
+            let split: Vec<&str> = split.split(".").collect();
+
+            let second: u8 = split[0].parse().unwrap();
+            let millisecond: u16 = split[1].parse().unwrap();
+
+            return DateFieldCustom::construct_self(year, month, day, hour, minute, second, millisecond);
         }
 
-        fn dummy() -> DateFieldCustom {
+        pub fn from_str(s: &str) -> DateFieldCustom {
+            return DateFieldCustom::new(String::from(s));
+        }
+        pub fn dummy() -> DateFieldCustom {
             let year: u32 = 2023;
             let month: u8 = 8;
             let day: u8 = 18;
@@ -42,7 +75,15 @@ pub mod datefield4 {
             };
         }
 
-        pub fn construct_self(year: u32, month: u8, day: u8, hour: u8, minute: u8, second: u8, millisecond: u16) -> DateFieldCustom {
+        pub fn construct_self(
+            year: u32,
+            month: u8,
+            day: u8,
+            hour: u8,
+            minute: u8,
+            second: u8,
+            millisecond: u16,
+        ) -> DateFieldCustom {
             return DateFieldCustom {
                 year,
                 month,
@@ -52,6 +93,73 @@ pub mod datefield4 {
                 second,
                 millisecond,
             };
+        }
+
+        pub fn construct_self_checked(
+            year: u32,
+            month: u8,
+            day: u8,
+            hour: u8,
+            minute: u8,
+            second: u8,
+            millisecond: u16,
+        ) -> Option<DateFieldCustom> {
+            if year > MAX_YEAR {
+                println!("year not supported");
+                return None;
+            }
+            if month > MAX_MONTH {
+                println!("month not supported");
+                return None;
+            }
+            if day > MAX_DAY {
+                println!("day not supported");
+                return None;
+            }
+            if hour > MAX_HOUR {
+                println!("hour not supported");
+                return None;
+            }
+            if minute > MAX_MINUTE {
+                println!("minute not supported");
+                return None;
+            }
+
+            if second > MAX_SECONDS {
+                println!("second not supported");
+                return None;
+            }
+
+            if millisecond > MAX_MILLISECONDS {
+                println!("millisecond not supported");
+                return None;
+            }
+
+            let is_a_leap_year = (year % 4 == 0) & (year % 100 != 0);
+
+            if is_a_leap_year {
+                let days = DAYS_LEAP[(month - 1) as usize];
+                if day > days {
+                    println!("more days than is in month");
+                    return None;
+                }
+            } else {
+                let days = DAYS_NONLEAP[(month - 1) as usize];
+                if day > days {
+                    println!("more days than is in month");
+                    return None;
+                }
+            }
+
+            return Some(DateFieldCustom {
+                year,
+                month,
+                day,
+                hour,
+                minute,
+                second,
+                millisecond,
+            });
         }
         pub fn into_datestring(&self) -> String {
             return format!("{}-{}-{}", self.year, self.month, self.day);

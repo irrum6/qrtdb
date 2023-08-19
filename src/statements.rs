@@ -228,7 +228,8 @@ pub mod statements {
                 FieldTypes::Fxchar(v) => v.compare(self.value.clone(), self.clause.clone()),
                 FieldTypes::Date(v) => {
                     let x: u64 = self.value.parse().unwrap();
-                    return WhereClauses::int_cmp(&self.clause, *v, x);
+                    // return WhereClauses::int_cmp(&self.clause, *v, x);
+                    return true;
                 }
             };
         }

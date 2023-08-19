@@ -21,10 +21,10 @@ $ id,pid,age,name $ @sys::other::studs ;
 
 #t exams|date d,pid int,name fx | name m @sys::other::studs.name t# @sys::other ;
 
-# 2023,1306,gela # @sys::other::exams ;
-# 2022,1301,vaja # @sys::other::exams ;
-# 2021,1302,grigol # @sys::other::exams ;
-# 2021,1402,grigal # @sys::other::exams ;
+# 2023-02-24 14:23:34.5,1306,gela # @sys::other::exams ;
+# 2022-02-24 14:23:34.5,1301,vaja # @sys::other::exams ;
+# 2021-02-24 14:23:34.5,1302,grigol # @sys::other::exams ;
+# 2021-02-24 14:23:34.5,1402,grigal # @sys::other::exams ;
 
 
 $ id,pid,date,name $ @sys::other::exams ;

@@ -390,7 +390,7 @@ pub mod table {
                             FieldTypes::Number(x) => println!("{}", x),
                             FieldTypes::Integer(x) => println!("{}", x),
                             FieldTypes::SignedInteger(x) => println!("{}", x),
-                            FieldTypes::Date(x) => println!("{}", x),
+                            FieldTypes::Date(dfc) => println!("{}", dfc.into_fulldatetime_string()),
                         }
                     } else {
                     }
