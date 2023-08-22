@@ -32,23 +32,46 @@ pub mod datefield4 {
             let separator = "-";
             let split: Vec<&str> = str.split(separator).collect();
             let year: u32 = split[0].parse().unwrap();
-            let month: u8 = split[1].parse().unwrap();
+
+            let mut month = 0;
+            let mut day = 0;
+            let mut hour = 0;
+            let mut minute = 0;
+            let mut second = 0;
+            let mut millisecond = 0;
+
+            if split.len() > 1 {
+                month = split[1].parse().unwrap();
+            }
+
+            if split.len() < 3 {
+                return DateFieldCustom::construct_self(year, month, day, hour, minute, second, millisecond);
+            }
 
             let split = split[2].clone();
             let split: Vec<&str> = split.split(" ").collect();
-            let day: u8 = split[0].parse().unwrap();
+            day = split[0].parse().unwrap();
+
+            if split.len() == 1 {
+                return DateFieldCustom::construct_self(year, month, day, hour, minute, second, millisecond);
+            }
 
             let split = split[1].clone();
             let split: Vec<&str> = split.split(":").collect();
 
-            let hour: u8 = split[0].parse().unwrap();
-            let minute: u8 = split[1].parse().unwrap();
+            hour = split[0].parse().unwrap();
+            minute = split[1].parse().unwrap();
 
+            if split.len() < 3 {
+                return DateFieldCustom::construct_self(year, month, day, hour, minute, second, millisecond);
+            }
             let split = split[2].clone();
             let split: Vec<&str> = split.split(".").collect();
 
-            let second: u8 = split[0].parse().unwrap();
-            let millisecond: u16 = split[1].parse().unwrap();
+            second = split[0].parse().unwrap();
+            if split.len() > 1 {
+                millisecond = split[1].parse().unwrap();
+            }
 
             return DateFieldCustom::construct_self(year, month, day, hour, minute, second, millisecond);
         }
@@ -161,6 +184,25 @@ pub mod datefield4 {
                 millisecond,
             });
         }
+
+        pub fn year(&self) -> u32 {
+            return self.year;
+        }
+        pub fn month(&self) -> u8 {
+            return self.month;
+        }
+
+        pub fn day(&self) -> u8 {
+            return self.day;
+        }
+
+        pub fn hour(&self) -> u8 {
+            return self.hour;
+        }
+        pub fn minute(&self) -> u8 {
+            return self.minute;
+        }
+
         pub fn into_datestring(&self) -> String {
             return format!("{}-{}-{}", self.year, self.month, self.day);
         }
