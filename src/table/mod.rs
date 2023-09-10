@@ -104,6 +104,11 @@ pub mod table {
                     return None;
                 }
                 let col = tc.unwrap();
+                if col.name() == "id" {
+                    println!("Can't create colun with name id");
+                    return None;
+                }
+
                 tablefields.push(col);
             }
 
