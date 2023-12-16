@@ -118,6 +118,40 @@ pub mod datefield4 {
             };
         }
 
+        fn check_print_pass(year: u32, month: u8, day: u8, hour: u8, minute: u8, second: u8, millisecond: u16) -> bool {
+            if year > MAX_YEAR {
+                println!("year not supported");
+                return false;
+            }
+            if month > MAX_MONTH {
+                println!("month not supported");
+                return false;
+            }
+            if day > MAX_DAY {
+                println!("day not supported");
+                return false;
+            }
+            if hour > MAX_HOUR {
+                println!("hour not supported");
+                return false;
+            }
+            if minute > MAX_MINUTE {
+                println!("minute not supported");
+                return false;
+            }
+
+            if second > MAX_SECONDS {
+                println!("second not supported");
+                return false;
+            }
+
+            if millisecond > MAX_MILLISECONDS {
+                println!("millisecond not supported");
+                return false;
+            }
+            return true;
+        }
+
         pub fn construct_self_checked(
             year: u32,
             month: u8,
@@ -127,34 +161,9 @@ pub mod datefield4 {
             second: u8,
             millisecond: u16,
         ) -> Option<DateFieldCustom> {
-            if year > MAX_YEAR {
-                println!("year not supported");
-                return None;
-            }
-            if month > MAX_MONTH {
-                println!("month not supported");
-                return None;
-            }
-            if day > MAX_DAY {
-                println!("day not supported");
-                return None;
-            }
-            if hour > MAX_HOUR {
-                println!("hour not supported");
-                return None;
-            }
-            if minute > MAX_MINUTE {
-                println!("minute not supported");
-                return None;
-            }
+            let cppass = Self::check_print_pass(year, month, day, hour, minute, second, millisecond);
 
-            if second > MAX_SECONDS {
-                println!("second not supported");
-                return None;
-            }
-
-            if millisecond > MAX_MILLISECONDS {
-                println!("millisecond not supported");
+            if cppass == false {
                 return None;
             }
 
